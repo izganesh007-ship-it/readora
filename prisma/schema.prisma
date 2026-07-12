@@ -1,0 +1,161 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum BookAccess { FREE PAID }
+enum PurchaseStatus { PENDING PAID EXPIRED INVALID }
+enum DownloadStatus { ACTIVE USED EXPIRED REVOKED }
+enum AdminRole { OWNER ADMIN EDITOR SUPPORT }
+
+model Admin {
+  id             String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  email          String    @unique @db.Citext
+  passwordHash   String    @map("password_hash")
+  role           AdminRole @default(ADMIN)
+  twoFactorSecret String?  @map("two_factor_secret")
+  failedAttempts Int       @default(0) @map("failed_attempts")
+  lockedUntil    DateTime? @map("locked_until") @db.Timestamptz
+  lastLoginAt    DateTime? @map("last_login_at") @db.Timestamptz
+  createdAt      DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt      DateTime  @default(now()) @map("updated_at") @db.Timestamptz
+  @@map("admins")
+}
+
+model Category {
+  id          String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name        String @unique
+  slug        String @unique
+  description String?
+  coverUrl    String? @map("cover_url")
+  sortOrder   Int @default(0) @map("sort_order")
+  isActive    Boolean @default(true) @map("is_active")
+  books       Book[]
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz
+  @@map("categories")
+}
+
+model Book {
+  id              String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  title           String
+  slug            String @unique
+  author          String
+  categoryId      String? @map("category_id") @db.Uuid
+  category        Category? @relation(fields: [categoryId], references: [id])
+  description     String
+  previewText     String? @map("preview_text")
+  access          BookAccess @default(PAID)
+  priceCents      Int @default(0) @map("price_cents")
+  currency        String @default("USD") @db.Char(3)
+  coverKey        String? @map("cover_key")
+  epubKey         String? @map("epub_key")
+  pdfKey          String? @map("pdf_key")
+  readerFormat    String @default("CHAPTERS") @map("reader_format")
+  readerContent   String? @map("reader_content")
+  readerContentKey String? @map("reader_content_key")
+  allowFreeDownload Boolean @default(false) @map("allow_free_download")
+  rating          Decimal @default(0) @db.Decimal(3,2)
+  reviewCount     Int @default(0) @map("review_count")
+  popularityScore Int @default(0) @map("popularity_score")
+  publishedAt     DateTime? @map("published_at") @db.Timestamptz
+  featured        Boolean @default(false)
+  isActive        Boolean @default(true) @map("is_active")
+  createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt       DateTime @default(now()) @map("updated_at") @db.Timestamptz
+  tags            BookTag[]
+  purchases       Purchase[]
+  reviews         Review[]
+  chapters        BookChapter[]
+  @@map("books")
+}
+
+model BookChapter {
+  id String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  bookId String @map("book_id") @db.Uuid
+  chapterIndex Int @map("chapter_index")
+  title String
+  content String
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  book Book @relation(fields: [bookId], references: [id], onDelete: Cascade)
+  @@unique([bookId, chapterIndex])
+  @@map("book_chapters")
+}
+
+model Tag {
+  id String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name String @unique
+  slug String @unique
+  books BookTag[]
+  @@map("tags")
+}
+
+model BookTag {
+  bookId String @map("book_id") @db.Uuid
+  tagId String @map("tag_id") @db.Uuid
+  book Book @relation(fields: [bookId], references: [id], onDelete: Cascade)
+  tag Tag @relation(fields: [tagId], references: [id], onDelete: Cascade)
+  @@id([bookId, tagId])
+  @@map("book_tags")
+}
+
+model User {
+  id String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  email String? @unique @db.Citext
+  displayName String? @map("display_name")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  purchases Purchase[]
+  reviews Review[]
+  @@map("users")
+}
+
+model Review {
+  id String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  bookId String @map("book_id") @db.Uuid
+  userId String? @map("user_id") @db.Uuid
+  reviewerName String @map("reviewer_name")
+  rating Int
+  body String
+  isApproved Boolean @default(false) @map("is_approved")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  book Book @relation(fields: [bookId], references: [id], onDelete: Cascade)
+  user User? @relation(fields: [userId], references: [id])
+  @@map("reviews")
+}
+
+model Purchase {
+  id String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId String? @map("user_id") @db.Uuid
+  bookId String @map("book_id") @db.Uuid
+  buyerEmail String? @map("buyer_email") @db.Citext
+  amountCents Int @map("amount_cents")
+  currency String @default("USD") @db.Char(3)
+  status PurchaseStatus @default(PENDING)
+  btcpayInvoiceId String? @unique @map("btcpay_invoice_id")
+  btcpayCheckoutLink String? @map("btcpay_checkout_link")
+  accessTokenHash String? @map("access_token_hash")
+  paidAt DateTime? @map("paid_at") @db.Timestamptz
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  user User? @relation(fields: [userId], references: [id])
+  book Book @relation(fields: [bookId], references: [id])
+  downloads DownloadLink[]
+  @@map("purchases")
+}
+
+model DownloadLink {
+  id String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  purchaseId String @map("purchase_id") @db.Uuid
+  bookId String @map("book_id") @db.Uuid
+  tokenHash String @unique @map("token_hash")
+  status DownloadStatus @default(ACTIVE)
+  expiresAt DateTime @map("expires_at") @db.Timestamptz
+  redeemedAt DateTime? @map("redeemed_at") @db.Timestamptz
+  redeemedIp String? @map("redeemed_ip")
+  userAgent String? @map("user_agent")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  purchase Purchase @relation(fields: [purchaseId], references: [id], onDelete: Cascade)
+  @@map("download_links")
+}

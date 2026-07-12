@@ -1,0 +1,30 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: readora
+      POSTGRES_USER: readora
+      POSTGRES_PASSWORD: change_me
+    ports:
+      - "5432:5432"
+    volumes:
+      - readora_pg:/var/lib/postgresql/data
+      - ./sql/init.sql:/docker-entrypoint-initdb.d/001_init.sql:ro
+  api:
+    image: node:22-alpine
+    working_dir: /app
+    command: sh -c "npm install && npm run dev"
+    ports:
+      - "8080:8080"
+    env_file: .env.example
+    environment:
+      DATABASE_URL: postgres://readora:change_me@postgres:5432/readora
+      NODE_ENV: development
+      PORT: 8080
+    volumes:
+      - .:/app
+    depends_on:
+      - postgres
+volumes:
+  readora_pg:

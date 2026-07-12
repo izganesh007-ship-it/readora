@@ -1,0 +1,80 @@
+openapi: 3.1.0
+info:
+  title: Readora REST API
+  version: 1.0.0
+  description: Premium ebook marketplace API with BTCPay Server payments and one-time downloads.
+servers:
+  - url: https://readora.example.com/api
+paths:
+  /home:
+    get:
+      summary: Homepage content and sections
+      responses: { '200': { description: OK } }
+  /books:
+    get:
+      summary: Browse/search/filter/sort books
+      parameters:
+        - { name: q, in: query, schema: { type: string } }
+        - { name: category, in: query, schema: { type: string } }
+        - { name: access, in: query, schema: { enum: [FREE, PAID] } }
+        - { name: sort, in: query, schema: { enum: [popularity, newest, price, rating] } }
+      responses: { '200': { description: OK } }
+  /books/{slug}:
+    get:
+      summary: Book details
+      parameters: [ { name: slug, in: path, required: true, schema: { type: string } } ]
+      responses: { '200': { description: OK }, '404': { description: Not found } }
+  /reader/{slug}:
+    get:
+      summary: Read a free book online. Paid books return 402.
+      parameters: [ { name: slug, in: path, required: true, schema: { type: string } } ]
+      responses: { '200': { description: OK }, '402': { description: Purchase required } }
+  /checkout/btcpay:
+    post:
+      summary: Create BTCPay invoice for a paid book
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [bookId]
+              properties:
+                bookId: { type: string, format: uuid }
+                buyerEmail: { type: string, format: email }
+      responses: { '201': { description: Invoice created } }
+  /webhooks/btcpay:
+    post:
+      summary: BTCPay webhook endpoint with HMAC verification
+      responses: { '200': { description: Accepted }, '401': { description: Invalid signature } }
+  /purchases/{id}:
+    get:
+      summary: Purchase status using purchase access token
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+        - { name: accessToken, in: query, required: true, schema: { type: string } }
+      responses: { '200': { description: OK } }
+  /purchases/{id}/download-token:
+    post:
+      summary: Issue a one-time download token for a paid purchase
+      responses: { '201': { description: Token issued }, '402': { description: Payment not confirmed } }
+  /downloads/{token}/redeem:
+    post:
+      summary: Atomically consume one-time download token and return short-lived signed URL
+      parameters: [ { name: token, in: path, required: true, schema: { type: string } } ]
+      responses: { '200': { description: Signed URL }, '410': { description: Expired/used } }
+  /admin/login:
+    post:
+      summary: Admin login
+      responses: { '200': { description: Session cookie set }, '401': { description: Invalid credentials } }
+  /admin/analytics:
+    get:
+      summary: Admin analytics
+      security: [ { adminCookie: [] } ]
+      responses: { '200': { description: OK } }
+components:
+  securitySchemes:
+    adminCookie:
+      type: apiKey
+      in: cookie
+      name: admin_session
