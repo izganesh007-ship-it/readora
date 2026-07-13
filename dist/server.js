@@ -26,7 +26,6 @@ app.set('trust proxy', 1);
 app.use(helmetMiddleware);
 app.use(corsMiddleware);
 app.use(cookieParser(env.COOKIE_SECRET));
-// Keep raw body for BTCPay HMAC verification.
 app.use('/api/webhooks/btcpay', express.json({
     verify: (req, _res, buf) => {
         req.rawBody = Buffer.from(buf);
@@ -34,17 +33,14 @@ app.use('/api/webhooks/btcpay', express.json({
 }));
 app.use(express.json({ limit: '1mb' }));
 app.use(apiLimiter);
-// Static frontend files
 app.use(express.static(publicDir, {
     index: false,
     extensions: ['html'],
     maxAge: env.NODE_ENV === 'production' ? '1h' : 0
 }));
-// Health
 app.get('/health', (_req, res) => {
     res.json({ ok: true, service: 'readora-api' });
 });
-// API routes
 app.use('/api/home', homeRouter);
 app.use('/api/books', booksRouter);
 app.use('/api/categories', categoriesRouter);
@@ -56,18 +52,14 @@ app.use('/api/purchases', purchasesRouter);
 app.use('/api/admin', adminRouter);
 app.use('/api/admin/uploads', uploadsRouter);
 app.use('/api/files', filesRouter);
-// Root SPA
 app.get('/', (_req, res) => {
     res.sendFile(indexHtml);
 });
-// SPA catch-all for non-API GET routes.
-// This lets /admin, /browse, /login, etc. load the same SPA.
 app.get(/.*/, (req, res, next) => {
     if (req.path.startsWith('/api/'))
         return next();
     res.sendFile(indexHtml);
 });
-// Error handler
 app.use((err, _req, res, _next) => {
     console.error(err);
     const status = err.status || err.statusCode || 500;
@@ -78,5 +70,5 @@ app.use((err, _req, res, _next) => {
 });
 app.listen(env.PORT, () => {
     console.log(`Readora API listening on ${env.PORT}`);
-    console.log(`Serving frontend from ${publicDir}`);
+    console.log(`Readora frontend served from ${publicDir}`);
 });

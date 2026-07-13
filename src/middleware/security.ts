@@ -14,6 +14,7 @@ export const helmetMiddleware = helmet({
     directives: {
       "default-src": ["'self'"],
       "script-src": ["'self'", "'unsafe-inline'"],
+      "script-src-attr": ["'none'"],
       "style-src": ["'self'", "'unsafe-inline'"],
       "img-src": ["'self'", "data:", "blob:"],
       "connect-src": ["'self'", env.BTCPAY_URL || "'self'"],
