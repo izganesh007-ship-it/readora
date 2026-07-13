@@ -1,48 +1,47 @@
-﻿{
-    "name":  "readora",
-    "version":  "1.0.0",
-    "private":  true,
-    "description":  "Readora - premium Netflix-style ebook marketplace with BTCPay Server, PostgreSQL, secure downloads and admin dashboard.",
-    "type":  "module",
-    "scripts":  {
-                    "dev":  "tsx watch src/server.ts",
-                    "start":  "node dist/server.js",
-                    "build":  "tsc -p tsconfig.json \u0026\u0026 node scripts/copy-public.cjs",
-                    "db:migrate":  "psql $DATABASE_URL -f sql/init.sql",
-                    "db:seed":  "psql $DATABASE_URL -f sql/seed.sql",
-                    "admin:create":  "tsx src/scripts/createAdmin.ts",
-                    "db:studio":  "prisma studio",
-                    "lint":  "eslint ."
-                },
-    "dependencies":  {
-                         "@aws-sdk/client-s3":  "latest",
-                         "@aws-sdk/s3-request-presigner":  "latest",
-                         "argon2":  "latest",
-                         "cookie-parser":  "latest",
-                         "cors":  "latest",
-                         "csurf":  "latest",
-                         "dotenv":  "latest",
-                         "express":  "latest",
-                         "express-rate-limit":  "latest",
-                         "helmet":  "latest",
-                         "jsonwebtoken":  "latest",
-                         "pg":  "latest",
-                         "pino":  "latest",
-                         "zod":  "latest",
-                         "multer":  "latest"
-                     },
-    "devDependencies":  {
-                            "@types/cookie-parser":  "latest",
-                            "@types/cors":  "latest",
-                            "@types/csurf":  "latest",
-                            "@types/express":  "latest",
-                            "@types/jsonwebtoken":  "latest",
-                            "@types/node":  "latest",
-                            "prisma":  "latest",
-                            "tsx":  "latest",
-                            "typescript":  "latest",
-                            "@types/pg":  "latest",
-                            "@types/multer":  "latest"
-                        }
+{
+    "name": "readora",
+    "version": "1.0.0",
+    "private": true,
+    "description": "Readora - premium Netflix-style ebook marketplace with BTCPay Server, PostgreSQL, secure downloads and admin dashboard.",
+    "type": "module",
+    "scripts": {
+        "dev": "tsx watch src/server.ts",
+        "start": "node dist/server.js",
+        "build": "tsc -p tsconfig.json && node scripts/copy-public.cjs",
+        "db:migrate": "psql $DATABASE_URL -f sql/init.sql",
+        "db:seed": "psql $DATABASE_URL -f sql/seed.sql",
+        "admin:create": "tsx src/scripts/createAdmin.ts",
+        "db:studio": "prisma studio",
+        "lint": "eslint ."
+    },
+    "dependencies": {
+        "@aws-sdk/client-s3": "latest",
+        "@aws-sdk/s3-request-presigner": "latest",
+        "argon2": "latest",
+        "cookie-parser": "latest",
+        "cors": "latest",
+        "csurf": "latest",
+        "dotenv": "latest",
+        "express": "latest",
+        "express-rate-limit": "latest",
+        "helmet": "latest",
+        "jsonwebtoken": "latest",
+        "multer": "latest",
+        "pg": "latest",
+        "pino": "latest",
+        "zod": "latest"
+    },
+    "devDependencies": {
+        "@types/cookie-parser": "latest",
+        "@types/cors": "latest",
+        "@types/csurf": "latest",
+        "@types/express": "latest",
+        "@types/jsonwebtoken": "latest",
+        "@types/multer": "latest",
+        "@types/node": "latest",
+        "@types/pg": "latest",
+        "prisma": "latest",
+        "tsx": "latest",
+        "typescript": "^7.0.2"
+    }
 }
-
