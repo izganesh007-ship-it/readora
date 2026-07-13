@@ -63,12 +63,21 @@ purchasesRouter.post('/:id/download-token', async (req, res, next) => {
         return { status: 410 as const, error: 'Download already used' };
       }
 
-      await client.query(
-        `UPDATE download_links
-         SET status='REVOKED'
-         WHERE purchase_id=$1 AND status='ACTIVE'`,
+      const active = await client.query(
+        `SELECT token_hash, expires_at FROM download_links
+         WHERE purchase_id=$1 AND status='ACTIVE' AND expires_at > now()
+         LIMIT 1`,
         [p.rows[0].id]
       );
+
+      if (active.rowCount) {
+        await client.query(
+          `UPDATE download_links
+           SET status='REVOKED'
+           WHERE purchase_id=$1 AND status='ACTIVE'`,
+          [p.rows[0].id]
+        );
+      }
 
       const link = await createDownloadLink(client, p.rows[0].id, p.rows[0].book_id);
 

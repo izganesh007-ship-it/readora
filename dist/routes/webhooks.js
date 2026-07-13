@@ -18,13 +18,9 @@ async function markPurchasePaid(input) {
          SET status='PAID', paid_at=now()
          WHERE id=$1`, [purchase.id]);
         }
-        const active = await client.query(`SELECT id FROM download_links
-       WHERE purchase_id=$1 AND status='ACTIVE' AND expires_at > now()
-       LIMIT 1`, [purchase.id]);
-        const used = await client.query(`SELECT id FROM download_links
-       WHERE purchase_id=$1 AND status='USED'
-       LIMIT 1`, [purchase.id]);
-        if (!active.rowCount && !used.rowCount) {
+        const existing = await client.query(`SELECT id FROM download_links
+       WHERE purchase_id=$1 AND status IN ('ACTIVE','USED') LIMIT 1`, [purchase.id]);
+        if (!existing.rowCount) {
             await createDownloadLink(client, purchase.id, purchase.book_id);
         }
     });
@@ -76,6 +72,7 @@ webhooksRouter.post('/nowpayments', async (req, res, next) => {
         const paidStatuses = new Set([
             'confirmed',
             'finished',
+            'sending',
             'partially_paid'
         ]);
         if (paidStatuses.has(status)) {

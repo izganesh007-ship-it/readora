@@ -42,7 +42,7 @@ const hasR2Config = Boolean(parsed.R2_ENDPOINT &&
     parsed.R2_SECRET_ACCESS_KEY &&
     parsed.R2_BUCKET);
 const useNowPayments = parsed.BTCPAY_MODE === 'nowpayments' ||
-    (parsed.BTCPAY_MODE === 'auto' && hasNowPaymentsConfig && !hasBtcpayConfig);
+    (parsed.BTCPAY_MODE === 'auto' && hasNowPaymentsConfig);
 const useMockBtcpay = parsed.BTCPAY_MODE === 'mock'
     ? true
     : parsed.BTCPAY_MODE === 'live'
@@ -51,9 +51,9 @@ const useMockBtcpay = parsed.BTCPAY_MODE === 'mock'
             ? false
             : !hasBtcpayConfig && !useNowPayments;
 const activeStorageDriver = parsed.STORAGE_DRIVER === 'auto'
-    ? (hasR2Config ? 'r2' : 'local')
+    ? (hasR2Config ? 's3' : 'local')
     : parsed.STORAGE_DRIVER === 'local' && parsed.CONFIG_AUTO_UPGRADE && hasR2Config
-        ? 'r2'
+        ? 's3'
         : parsed.STORAGE_DRIVER;
 export const env = {
     ...parsed,

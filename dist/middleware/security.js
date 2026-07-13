@@ -14,8 +14,8 @@ export const helmetMiddleware = helmet({
             "script-src": ["'self'", "'unsafe-inline'"],
             "script-src-attr": ["'none'"],
             "style-src": ["'self'", "'unsafe-inline'"],
-            "img-src": ["'self'", "data:", "blob:"],
-            "connect-src": ["'self'", env.BTCPAY_URL || "'self'"],
+            "img-src": ["'self'", "data:", "blob:", "https:"],
+            "connect-src": ["'self'", "https://api.nowpayments.io", env.BTCPAY_URL || "'self'"],
             "frame-ancestors": ["'none'"]
         }
     },

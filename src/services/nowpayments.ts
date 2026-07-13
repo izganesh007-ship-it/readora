@@ -39,11 +39,13 @@ function sortObject(value: any): any {
 
 export function verifyNowPaymentsSignature(body: unknown, signature?: string | string[]) {
   if (!env.NOWPAYMENTS_IPN_SECRET) return true;
+
   const sig = Array.isArray(signature) ? signature[0] : signature;
   if (!sig) return false;
 
   const sortedBody = sortObject(body);
   const stringified = JSON.stringify(sortedBody);
+
   const expected = crypto
     .createHmac('sha512', env.NOWPAYMENTS_IPN_SECRET)
     .update(stringified)
@@ -56,7 +58,7 @@ export function verifyNowPaymentsSignature(body: unknown, signature?: string | s
 }
 
 export async function createPayment(
-  bookId: string,
+  orderId: string,
   priceCents: number,
   currency = 'usd',
   orderDescription = 'Readora ebook purchase'
@@ -68,7 +70,7 @@ export async function createPayment(
     price_amount: priceAmount,
     price_currency: currency.toLowerCase(),
     pay_currency: 'btc',
-    order_id: bookId,
+    order_id: orderId,
     order_description: orderDescription,
     ipn_callback_url: `${env.APP_URL.replace(/\/$/, '')}/api/webhooks/nowpayments`
   };
@@ -100,7 +102,7 @@ export async function createPayment(
     throw new Error(message);
   }
 
-  const paymentId = String(data.payment_id || data.purchase_id || data.order_id || bookId);
+  const paymentId = String(data.payment_id || data.purchase_id || data.order_id || orderId);
   const payAddress = String(data.pay_address || '');
   const payAmount = data.pay_amount ? String(data.pay_amount) : '';
 

@@ -45,7 +45,7 @@
     <form class="search" id="globalSearch">
       <input id="searchInput" placeholder="Search books, authors, tags..." autocomplete="off" />
     </form>
-    <a class="icon-btn" href="#wishlist" title="Wishlist" style="position:relative">â™¥<span class="badge-count" id="wishCount">0</span></a>
+    <a class="icon-btn" href="#wishlist" title="Wishlist" style="position:relative">&#9829;<span class="badge-count" id="wishCount">0</span></a>
     <button class="icon-btn menu-btn" id="menuBtn" type="button" aria-label="Open menu">â˜°</button>
   </header>
 
@@ -59,7 +59,7 @@
   <main id="view"></main>
 
   <footer class="footer">
-    <div><b>Readora</b> â€” premium ebook marketplace with automatic crypto checkout and one-time downloads.</div>
+    <div><b>Readora</b> â€” premium ebook marketplace with Backblaze B2 storage, crypto checkout, and one-time downloads.</div>
     <div>
       <a href="#about">About</a>
       <a href="#contact">Contact</a>
@@ -73,7 +73,7 @@
 
 <script>
 (function () {
-  console.log('[Readora] SPA loaded with NOWPayments support');
+  console.log('[Readora] SPA loaded');
 
   const state = {
     categories: [],
@@ -145,6 +145,39 @@
     return data;
   }
 
+  async function uploadAdminFile(file, kind) {
+    if (!file) return null;
+
+    console.log('[Readora] uploadAdminFile', kind, file.name);
+
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('kind', kind);
+
+    const headers = {};
+    if (state.adminToken && state.adminToken !== 'cookie') headers.Authorization = 'Bearer ' + state.adminToken;
+
+    const res = await fetch('/api/admin/uploads', {
+      method: 'POST',
+      credentials: 'include',
+      headers,
+      body: formData
+    });
+
+    const text = await res.text();
+    let data = null;
+    try { data = text ? JSON.parse(text) : null; } catch { data = text; }
+
+    console.log('[Readora upload response]', res.status, data);
+
+    if (!res.ok) {
+      const msg = data && data.error ? data.error : ('Upload failed: ' + res.status);
+      throw new Error(msg);
+    }
+
+    return data.key;
+  }
+
   function loading(title = 'Loading...') {
     return `<div class="page browse-shell"><div class="eyebrow">Readora</div><h1 class="page-title">${escapeHtml(title)}</h1><p class="lead">Please wait.</p></div>`;
   }
@@ -194,7 +227,7 @@
   function card(raw) {
     const book = normalizeBook(raw);
     return `<article class="book-card" data-action="details" data-slug="${escapeHtml(book.slug)}">
-      <button class="heart ${isWished(book.slug) ? 'active' : ''}" type="button" data-action="wishlist" data-slug="${escapeHtml(book.slug)}">â™¥</button>
+      <button class="heart ${isWished(book.slug) ? 'active' : ''}" type="button" data-action="wishlist" data-slug="${escapeHtml(book.slug)}">&#9829;</button>
       <span class="price-badge ${book.free ? 'free' : 'paid'}">${book.free ? 'FREE' : 'PAID'}</span>
       ${cover(book)}
       <div class="card-body">
@@ -258,7 +291,7 @@
             <div class="actions">
               <a class="btn primary" href="${hero.free ? '#reader/' + hero.slug : '#checkout/' + hero.slug}">${hero.free ? 'Read Free' : 'Pay with Crypto'}</a>
               <a class="btn ghost" href="#details/${hero.slug}">View Details</a>
-              <button class="btn ghost" type="button" data-action="wishlist" data-slug="${escapeHtml(hero.slug)}">â™¥ Wishlist</button>
+              <button class="btn ghost" type="button" data-action="wishlist" data-slug="${escapeHtml(hero.slug)}">&#9829; Wishlist</button>
             </div>
           </div>
           <div class="hero-card">
@@ -345,7 +378,7 @@
             <div class="tags">${tags.map(t => `<span class="tag">#${escapeHtml(t)}</span>`).join('')}</div>
             <div class="actions">
               <a class="btn primary" href="${book.free ? '#reader/' + book.slug : '#checkout/' + book.slug}">${book.free ? 'Read Online' : 'Pay with Crypto'}</a>
-              <button class="btn ghost" type="button" data-action="wishlist" data-slug="${escapeHtml(book.slug)}">â™¥ ${isWished(book.slug) ? 'Remove Wishlist' : 'Add Wishlist'}</button>
+              <button class="btn ghost" type="button" data-action="wishlist" data-slug="${escapeHtml(book.slug)}">&#9829; ${isWished(book.slug) ? 'Remove Wishlist' : 'Add Wishlist'}</button>
               <a class="btn ghost" href="#browse">Back to Browse</a>
             </div>
           </section>
@@ -459,12 +492,11 @@
   }
 
   async function startCheckout(bookId) {
-    console.log('[Readora] startCheckout', bookId);
     const box = $('#checkoutResult');
     if (box) box.innerHTML = '<div class="panel"><p>Creating crypto payment...</p></div>';
 
     try {
-      const out = await api('/api/checkout/btcpay', {
+      const out = await api('/api/checkout/nowpayments', {
         method: 'POST',
         body: JSON.stringify({ bookId })
       });
@@ -473,7 +505,7 @@
       const slug = currentRoute.path.split('/')[1];
 
       const pending = {
-        provider: out.provider || 'crypto',
+        provider: out.provider || 'nowpayments',
         purchaseId: out.purchaseId,
         purchaseAccessToken: out.purchaseAccessToken,
         checkoutLink: out.checkoutLink || out.paymentUrl,
@@ -492,24 +524,17 @@
 
       startPaymentPolling(pending);
     } catch (err) {
-      console.error('[Readora] checkout failed', err);
       if (box) box.innerHTML = `<div class="panel"><p>${escapeHtml(err.message)}</p></div>`;
     }
   }
 
   function startPaymentPolling(pending) {
     if (state.paymentPollTimer) clearInterval(state.paymentPollTimer);
-
     pollPaymentStatus(pending);
-
-    state.paymentPollTimer = setInterval(() => {
-      pollPaymentStatus(pending);
-    }, 5000);
+    state.paymentPollTimer = setInterval(() => pollPaymentStatus(pending), 5000);
   }
 
   async function pollPaymentStatus(pending) {
-    console.log('[Readora] polling payment status', pending.purchaseId);
-
     const statusText = $('#paymentStatusText');
 
     try {
@@ -523,7 +548,6 @@
         await unlockDownloadToken(pending);
       }
     } catch (err) {
-      console.error('[Readora] payment poll failed', err);
       if (statusText) statusText.textContent = err.message;
     }
   }
@@ -552,7 +576,6 @@
         </div>`;
       }
     } catch (err) {
-      console.error('[Readora] download token failed', err);
       if (box) box.innerHTML = `<p>${escapeHtml(err.message)}</p>`;
     }
   }
@@ -636,6 +659,8 @@
                   <option value="HTML">HTML</option>
                   <option value="PDF">PDF</option>
                 </select>
+                <input class="control full" id="coverFile" name="coverFile" type="file" accept="image/*" />
+                <input class="control full" id="ebookFile" name="ebookFile" type="file" accept=".pdf,.epub" />
                 <textarea class="control textarea full" id="bookDescription" name="description" placeholder="Description" required></textarea>
                 <textarea class="control textarea full" id="bookReaderContent" name="readerContent" placeholder="Optional free TXT/HTML reader content"></textarea>
                 <label class="pill"><input type="checkbox" id="bookFeatured" name="featured" /> Featured</label>
@@ -693,11 +718,20 @@
     const debug = $('#addBookDebug');
 
     try {
+      if (debug) debug.textContent = 'Uploading files...';
+
+      const coverFile = form.coverFile.files && form.coverFile.files[0] ? form.coverFile.files[0] : null;
+      const ebookFile = form.ebookFile.files && form.ebookFile.files[0] ? form.ebookFile.files[0] : null;
+
+      const coverKey = coverFile ? await uploadAdminFile(coverFile, 'cover') : null;
+      const ebookKey = ebookFile ? await uploadAdminFile(ebookFile, 'ebook') : null;
+
       if (debug) debug.textContent = 'Saving book...';
 
       const title = form.title.value.trim();
       const access = form.access.value;
       const price = access === 'FREE' ? 0 : Math.round(Number(form.price.value || 0) * 100);
+      const ebookName = ebookFile ? ebookFile.name.toLowerCase() : '';
 
       const body = {
         title,
@@ -708,6 +742,9 @@
         previewText: form.description.value.trim().slice(0, 500),
         access,
         priceCents: price,
+        coverKey,
+        epubKey: ebookKey && ebookName.endsWith('.epub') ? ebookKey : null,
+        pdfKey: ebookKey && ebookName.endsWith('.pdf') ? ebookKey : null,
         readerFormat: form.readerFormat.value,
         readerContent: form.readerContent.value.trim() || null,
         allowFreeDownload: false,
@@ -883,6 +920,7 @@
     state,
     api,
     render,
+    uploadAdminFile,
     pollPaymentStatus,
     redeemDownload
   };

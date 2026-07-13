@@ -28,7 +28,8 @@
                          "jsonwebtoken":  "latest",
                          "pg":  "latest",
                          "pino":  "latest",
-                         "zod":  "latest"
+                         "zod":  "latest",
+                         "multer":  "latest"
                      },
     "devDependencies":  {
                             "@types/cookie-parser":  "latest",
@@ -40,7 +41,8 @@
                             "prisma":  "latest",
                             "tsx":  "latest",
                             "typescript":  "latest",
-                            "@types/pg":  "latest"
+                            "@types/pg":  "latest",
+                            "@types/multer":  "latest"
                         }
 }
 

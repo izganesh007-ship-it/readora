@@ -33,14 +33,14 @@ export function verifyNowPaymentsSignature(body, signature) {
     const b = Buffer.from(expected);
     return a.length === b.length && crypto.timingSafeEqual(a, b);
 }
-export async function createPayment(bookId, priceCents, currency = 'usd', orderDescription = 'Readora ebook purchase') {
+export async function createPayment(orderId, priceCents, currency = 'usd', orderDescription = 'Readora ebook purchase') {
     const apiKey = requireApiKey();
     const priceAmount = Math.max(0, Number(priceCents || 0) / 100);
     const body = {
         price_amount: priceAmount,
         price_currency: currency.toLowerCase(),
         pay_currency: 'btc',
-        order_id: bookId,
+        order_id: orderId,
         order_description: orderDescription,
         ipn_callback_url: `${env.APP_URL.replace(/\/$/, '')}/api/webhooks/nowpayments`
     };
@@ -67,7 +67,7 @@ export async function createPayment(bookId, priceCents, currency = 'usd', orderD
             `NOWPayments payment failed with status ${response.status}`;
         throw new Error(message);
     }
-    const paymentId = String(data.payment_id || data.purchase_id || data.order_id || bookId);
+    const paymentId = String(data.payment_id || data.purchase_id || data.order_id || orderId);
     const payAddress = String(data.pay_address || '');
     const payAmount = data.pay_amount ? String(data.pay_amount) : '';
     const paymentUrl = String(data.invoice_url || data.payment_url || data.pay_url || data.payment_link || '') ||
