@@ -1,4 +1,4 @@
-import 'dotenv/config';
+﻿import 'dotenv/config';
 import { z } from 'zod';
 
 const schema = z.object({
@@ -10,10 +10,9 @@ const schema = z.object({
   JWT_SECRET: z.string().min(16).default('dev_jwt_secret_change_me'),
   CORS_ORIGIN: z.string().default('http://localhost:3000'),
 
-  // Auto configuration: keep these as auto for easiest deployment.
   CONFIG_AUTO_UPGRADE: z.coerce.boolean().default(true),
-  BTCPAY_MODE: z.enum(['auto', 'mock', 'live']).default('auto'),
-  MOCK_BTCPAY: z.coerce.boolean().optional(), // old compatibility; auto mode upgrades to live when BTCPay vars exist.
+  BTCPAY_MODE: z.enum(['auto', 'mock', 'live', 'nowpayments']).default('auto'),
+
   STORAGE_DRIVER: z.enum(['auto', 'local', 's3', 'r2']).default('auto'),
   LOCAL_STORAGE_DIR: z.string().default('./storage'),
 
@@ -23,13 +22,18 @@ const schema = z.object({
   BTCPAY_WEBHOOK_SECRET: z.string().optional(),
   BTCPAY_CURRENCY: z.string().default('USD'),
 
+  NOWPAYMENTS_API_KEY: z.string().optional(),
+  NOWPAYMENTS_IPN_SECRET: z.string().optional(),
+
   R2_ENDPOINT: z.string().optional(),
   R2_ACCESS_KEY_ID: z.string().optional(),
   R2_SECRET_ACCESS_KEY: z.string().optional(),
   R2_BUCKET: z.string().optional(),
   R2_REGION: z.string().default('auto'),
+
   SIGNED_URL_SECONDS: z.coerce.number().default(300),
   DOWNLOAD_TOKEN_HOURS: z.coerce.number().default(24),
+
   LOGIN_RATE_LIMIT_WINDOW_MIN: z.coerce.number().default(15),
   LOGIN_RATE_LIMIT_MAX: z.coerce.number().default(5),
   API_RATE_LIMIT_WINDOW_MIN: z.coerce.number().default(15),
@@ -37,14 +41,34 @@ const schema = z.object({
 });
 
 const parsed = schema.parse(process.env);
-const hasBtcpayConfig = Boolean(parsed.BTCPAY_URL && parsed.BTCPAY_API_KEY && parsed.BTCPAY_STORE_ID && parsed.BTCPAY_WEBHOOK_SECRET);
-const hasR2Config = Boolean(parsed.R2_ENDPOINT && parsed.R2_ACCESS_KEY_ID && parsed.R2_SECRET_ACCESS_KEY && parsed.R2_BUCKET);
+
+const hasBtcpayConfig = Boolean(
+  parsed.BTCPAY_URL &&
+  parsed.BTCPAY_API_KEY &&
+  parsed.BTCPAY_STORE_ID &&
+  parsed.BTCPAY_WEBHOOK_SECRET
+);
+
+const hasNowPaymentsConfig = Boolean(parsed.NOWPAYMENTS_API_KEY);
+
+const hasR2Config = Boolean(
+  parsed.R2_ENDPOINT &&
+  parsed.R2_ACCESS_KEY_ID &&
+  parsed.R2_SECRET_ACCESS_KEY &&
+  parsed.R2_BUCKET
+);
+
+const useNowPayments =
+  parsed.BTCPAY_MODE === 'nowpayments' ||
+  (parsed.BTCPAY_MODE === 'auto' && hasNowPaymentsConfig && !hasBtcpayConfig);
 
 const useMockBtcpay = parsed.BTCPAY_MODE === 'mock'
   ? true
   : parsed.BTCPAY_MODE === 'live'
     ? false
-    : !hasBtcpayConfig;
+    : parsed.BTCPAY_MODE === 'nowpayments'
+      ? false
+      : !hasBtcpayConfig && !useNowPayments;
 
 const activeStorageDriver = parsed.STORAGE_DRIVER === 'auto'
   ? (hasR2Config ? 'r2' : 'local')
@@ -57,7 +81,9 @@ export const env = {
   STORAGE_DRIVER_REQUESTED: parsed.STORAGE_DRIVER,
   STORAGE_DRIVER: activeStorageDriver as 'local' | 's3' | 'r2',
   HAS_BTCPAY_CONFIG: hasBtcpayConfig,
+  HAS_NOWPAYMENTS_CONFIG: hasNowPaymentsConfig,
   HAS_R2_CONFIG: hasR2Config,
+  USE_NOWPAYMENTS: useNowPayments,
   USE_MOCK_BTCPAY: useMockBtcpay
 };
 

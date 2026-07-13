@@ -59,7 +59,7 @@
   <main id="view"></main>
 
   <footer class="footer">
-    <div><b>Readora</b> â€” premium ebook marketplace powered by PostgreSQL, BTCPay Server-ready checkout, and one-time secure downloads.</div>
+    <div><b>Readora</b> â€” premium ebook marketplace with automatic crypto checkout and one-time downloads.</div>
     <div>
       <a href="#about">About</a>
       <a href="#contact">Contact</a>
@@ -73,12 +73,14 @@
 
 <script>
 (function () {
-  console.log('[Readora] SPA script loaded');
+  console.log('[Readora] SPA loaded with NOWPayments support');
 
   const state = {
     categories: [],
     adminToken: localStorage.getItem('readora_admin_token') || '',
-    wishlist: JSON.parse(localStorage.getItem('readora_wishlist') || '[]')
+    wishlist: JSON.parse(localStorage.getItem('readora_wishlist') || '[]'),
+    pendingPurchase: JSON.parse(localStorage.getItem('readora_pending_purchase') || 'null'),
+    paymentPollTimer: null
   };
 
   const $ = (s, root = document) => root.querySelector(s);
@@ -113,7 +115,6 @@
   }
 
   function toggleWish(slug) {
-    console.log('[Readora] toggleWish', slug);
     state.wishlist = isWished(slug) ? state.wishlist.filter(x => x !== slug) : [slug, ...state.wishlist];
     setWish();
     render();
@@ -121,6 +122,7 @@
 
   async function api(path, options = {}) {
     console.log('[Readora API]', options.method || 'GET', path);
+
     const headers = Object.assign({ 'Content-Type': 'application/json' }, options.headers || {});
     if (state.adminToken && state.adminToken !== 'cookie') headers.Authorization = 'Bearer ' + state.adminToken;
 
@@ -149,7 +151,7 @@
 
   function errorView(err) {
     console.error('[Readora Error]', err);
-    return `<div class="page browse-shell"><div class="eyebrow">Error</div><h1 class="page-title">Something went wrong</h1><p class="lead">${escapeHtml(err.message || err)}</p><div class="panel"><p>Open DevTools Console and Railway logs for more details.</p></div></div>`;
+    return `<div class="page browse-shell"><div class="eyebrow">Error</div><h1 class="page-title">Something went wrong</h1><p class="lead">${escapeHtml(err.message || err)}</p><div class="panel"><p>Open DevTools Console and Railway logs for details.</p></div></div>`;
   }
 
   function gradientFor(book) {
@@ -209,7 +211,7 @@
         <div><h2 class="section-title">${escapeHtml(title)}</h2><p class="section-sub">${escapeHtml(subtitle)}</p></div>
         <a class="btn small ghost" href="#browse">See all</a>
       </div>
-      <div class="rail">${items.length ? items.map(card).join('') : '<div class="empty">No books yet. Seed the database or add books in admin.</div>'}</div>
+      <div class="rail">${items.length ? items.map(card).join('') : '<div class="empty">No books yet. Add books in admin.</div>'}</div>
     </section>`;
   }
 
@@ -233,13 +235,8 @@
         $('#view').innerHTML = `<div class="page browse-shell">
           <div class="eyebrow">Readora</div>
           <h1 class="page-title">No books found</h1>
-          <p class="lead">Your API is working, but your database has no books yet.</p>
-          <div class="panel">
-            <h3>Fix</h3>
-            <p>Run this in Railway Console:</p>
-            <pre>npm run db:seed</pre>
-            <p>Or login to admin and add your first book.</p>
-          </div>
+          <p class="lead">Your database has no books yet. Login to admin and add books.</p>
+          <div class="actions"><a class="btn primary" href="#admin">Open Admin</a></div>
         </div>`;
         return;
       }
@@ -259,7 +256,7 @@
               <span class="pill">${money(hero.priceCents)}</span>
             </div>
             <div class="actions">
-              <a class="btn primary" href="${hero.free ? '#reader/' + hero.slug : '#checkout/' + hero.slug}">${hero.free ? 'Read Free' : 'Buy with Bitcoin'}</a>
+              <a class="btn primary" href="${hero.free ? '#reader/' + hero.slug : '#checkout/' + hero.slug}">${hero.free ? 'Read Free' : 'Pay with Crypto'}</a>
               <a class="btn ghost" href="#details/${hero.slug}">View Details</a>
               <button class="btn ghost" type="button" data-action="wishlist" data-slug="${escapeHtml(hero.slug)}">â™¥ Wishlist</button>
             </div>
@@ -275,13 +272,6 @@
         ${row('Trending Books', 'Most viewed and purchased this week', trending)}
         ${row('New Releases', 'Fresh drops from your database', newest)}
         ${row('Featured Books', 'Managed by the admin panel', featured)}
-        <section class="personal">
-          <div>
-            <h2>Dynamic marketplace connected to your API.</h2>
-            <p>This frontend loads books, categories, admin analytics, and admin book creation from the backend.</p>
-          </div>
-          <a class="btn primary" href="#admin">Open Admin</a>
-        </section>
       </div>`;
     } catch (err) {
       $('#view').innerHTML = errorView(err);
@@ -354,13 +344,9 @@
             <p class="detail-desc">${escapeHtml(book.description || '')}</p>
             <div class="tags">${tags.map(t => `<span class="tag">#${escapeHtml(t)}</span>`).join('')}</div>
             <div class="actions">
-              <a class="btn primary" href="${book.free ? '#reader/' + book.slug : '#checkout/' + book.slug}">${book.free ? 'Read Online' : 'Purchase Required'}</a>
+              <a class="btn primary" href="${book.free ? '#reader/' + book.slug : '#checkout/' + book.slug}">${book.free ? 'Read Online' : 'Pay with Crypto'}</a>
               <button class="btn ghost" type="button" data-action="wishlist" data-slug="${escapeHtml(book.slug)}">â™¥ ${isWished(book.slug) ? 'Remove Wishlist' : 'Add Wishlist'}</button>
               <a class="btn ghost" href="#browse">Back to Browse</a>
-            </div>
-            <div class="panel">
-              <h3>Preview Text</h3>
-              <div class="preview-text">${escapeHtml(out.data.preview_text || out.data.previewText || book.description || '')}</div>
             </div>
           </section>
         </div>
@@ -419,40 +405,63 @@
   }
 
   async function renderCheckout(slug) {
-    $('#view').innerHTML = loading('Preparing checkout...');
+    $('#view').innerHTML = loading('Preparing crypto checkout...');
     try {
       const out = await api('/api/books/' + encodeURIComponent(slug));
       const book = normalizeBook(out.data);
 
       $('#view').innerHTML = `<div class="page checkout">
-        <div class="eyebrow">Bitcoin Checkout</div>
-        <h1 class="page-title">Checkout</h1>
+        <div class="eyebrow">Crypto Checkout</div>
+        <h1 class="page-title">Pay with Crypto</h1>
         <div class="checkout-card">
           <div>${cover(book, 'cover-detail')}</div>
           <div>
             <h2>${escapeHtml(book.title)}</h2>
-            <p class="lead">Paid books require purchase. After BTCPay confirms payment, Readora issues a one-time download token.</p>
+            <p class="lead">After payment is confirmed by NOWPayments webhook, Readora will unlock a one-time download token.</p>
             <div class="status-box">
               <div class="status-line"><span class="pulse"></span><b>${money(book.priceCents)}</b></div>
-              <div class="status-line">Payment mode is controlled by your server environment variables.</div>
+              <div class="status-line">Pay currency: BTC via NOWPayments.</div>
             </div>
             <div class="actions">
-              <button class="btn primary" type="button" data-action="start-checkout" data-book-id="${escapeHtml(book.id)}">Create Invoice</button>
+              <button class="btn primary" type="button" data-action="start-checkout" data-book-id="${escapeHtml(book.id)}">Pay with Crypto</button>
               <a class="btn ghost" href="#details/${book.slug}">Cancel</a>
             </div>
             <div id="checkoutResult"></div>
           </div>
         </div>
       </div>`;
+
+      if (state.pendingPurchase && state.pendingPurchase.slug === slug) {
+        showPendingPayment(state.pendingPurchase);
+        startPaymentPolling(state.pendingPurchase);
+      }
     } catch (err) {
       $('#view').innerHTML = errorView(err);
     }
   }
 
+  function showPendingPayment(p) {
+    const box = $('#checkoutResult');
+    if (!box) return;
+
+    box.innerHTML = `<div class="panel">
+      <h3>Payment Created</h3>
+      <p>Provider: ${escapeHtml(p.provider || 'crypto')}</p>
+      <p>Purchase ID: ${escapeHtml(p.purchaseId || '')}</p>
+      ${p.payAddress ? `<p>Pay address:</p><div class="token">${escapeHtml(p.payAddress)}</div>` : ''}
+      <p>Status: <span id="paymentStatusText">Waiting for payment confirmation...</span></p>
+      <div class="actions">
+        <a class="btn primary" href="${escapeHtml(p.checkoutLink || '#')}" target="_blank" rel="noopener">Open Payment Page</a>
+        <button class="btn ghost" type="button" data-action="poll-payment">Check Payment Status</button>
+      </div>
+      <div id="downloadTokenBox"></div>
+    </div>`;
+  }
+
   async function startCheckout(bookId) {
     console.log('[Readora] startCheckout', bookId);
     const box = $('#checkoutResult');
-    if (box) box.innerHTML = '<div class="panel"><p>Creating invoice...</p></div>';
+    if (box) box.innerHTML = '<div class="panel"><p>Creating crypto payment...</p></div>';
 
     try {
       const out = await api('/api/checkout/btcpay', {
@@ -460,25 +469,110 @@
         body: JSON.stringify({ bookId })
       });
 
-      if (box) {
-        box.innerHTML = `<div class="panel">
-          <h3>Invoice Created</h3>
-          <p>Purchase ID: ${escapeHtml(out.purchaseId || '')}</p>
-          <p>Save this purchase access token for testing purchase/download:</p>
-          <div class="token">${escapeHtml(out.purchaseAccessToken || '')}</div>
-          <div class="actions">
-            <a class="btn primary" href="${escapeHtml(out.checkoutLink || '#')}" target="_blank" rel="noopener">Open Checkout</a>
-          </div>
-        </div>`;
+      const currentRoute = parseRoute();
+      const slug = currentRoute.path.split('/')[1];
+
+      const pending = {
+        provider: out.provider || 'crypto',
+        purchaseId: out.purchaseId,
+        purchaseAccessToken: out.purchaseAccessToken,
+        checkoutLink: out.checkoutLink || out.paymentUrl,
+        payAddress: out.payAddress || '',
+        slug
+      };
+
+      state.pendingPurchase = pending;
+      localStorage.setItem('readora_pending_purchase', JSON.stringify(pending));
+
+      showPendingPayment(pending);
+
+      if (pending.checkoutLink) {
+        window.open(pending.checkoutLink, '_blank', 'noopener,noreferrer');
       }
+
+      startPaymentPolling(pending);
     } catch (err) {
+      console.error('[Readora] checkout failed', err);
       if (box) box.innerHTML = `<div class="panel"><p>${escapeHtml(err.message)}</p></div>`;
     }
   }
 
-  async function renderAdmin() {
-    console.log('[Readora] renderAdmin token?', Boolean(state.adminToken));
+  function startPaymentPolling(pending) {
+    if (state.paymentPollTimer) clearInterval(state.paymentPollTimer);
 
+    pollPaymentStatus(pending);
+
+    state.paymentPollTimer = setInterval(() => {
+      pollPaymentStatus(pending);
+    }, 5000);
+  }
+
+  async function pollPaymentStatus(pending) {
+    console.log('[Readora] polling payment status', pending.purchaseId);
+
+    const statusText = $('#paymentStatusText');
+
+    try {
+      const out = await api(`/api/purchases/${encodeURIComponent(pending.purchaseId)}?accessToken=${encodeURIComponent(pending.purchaseAccessToken)}`);
+      const status = out.data && out.data.status ? out.data.status : 'PENDING';
+
+      if (statusText) statusText.textContent = status;
+
+      if (status === 'PAID') {
+        if (state.paymentPollTimer) clearInterval(state.paymentPollTimer);
+        await unlockDownloadToken(pending);
+      }
+    } catch (err) {
+      console.error('[Readora] payment poll failed', err);
+      if (statusText) statusText.textContent = err.message;
+    }
+  }
+
+  async function unlockDownloadToken(pending) {
+    const box = $('#downloadTokenBox');
+    if (box) box.innerHTML = '<p>Creating one-time download token...</p>';
+
+    try {
+      const out = await api(`/api/purchases/${encodeURIComponent(pending.purchaseId)}/download-token`, {
+        method: 'POST',
+        body: JSON.stringify({ accessToken: pending.purchaseAccessToken })
+      });
+
+      localStorage.removeItem('readora_pending_purchase');
+      state.pendingPurchase = null;
+
+      if (box) {
+        box.innerHTML = `<div class="panel">
+          <h3>Payment Confirmed</h3>
+          <p>Your one-time download token is ready. It expires after first use or after 24 hours.</p>
+          <div class="token">${escapeHtml(out.token)}</div>
+          <div class="actions">
+            <button class="btn primary" type="button" data-action="redeem-download" data-token="${escapeHtml(out.token)}">Download Once</button>
+          </div>
+        </div>`;
+      }
+    } catch (err) {
+      console.error('[Readora] download token failed', err);
+      if (box) box.innerHTML = `<p>${escapeHtml(err.message)}</p>`;
+    }
+  }
+
+  async function redeemDownload(token) {
+    try {
+      const out = await api('/api/downloads/' + encodeURIComponent(token) + '/redeem', {
+        method: 'POST',
+        body: JSON.stringify({})
+      });
+
+      if (out.signedUrl) {
+        window.open(out.signedUrl, '_blank', 'noopener,noreferrer');
+      }
+    } catch (err) {
+      toast(err.message);
+    }
+  }
+
+  async function renderAdmin() {
     if (!state.adminToken) {
       $('#view').innerHTML = `<div class="page admin">
         <div class="login-box">
@@ -549,19 +643,10 @@
               </form>
               <div id="addBookDebug" class="section-sub" style="margin-top:12px"></div>
             </div>
-
-            <div class="panel">
-              <h3>Trending</h3>
-              <table class="table">
-                <tr><th>Book</th><th>Slug</th><th>Views</th></tr>
-                ${(analytics.trending || []).map(b => `<tr><td>${escapeHtml(b.title)}</td><td>${escapeHtml(b.slug)}</td><td>${b.views}</td></tr>`).join('')}
-              </table>
-            </div>
           </section>
         </div>
       </div>`;
     } catch (err) {
-      console.error('[Readora] admin dashboard failed', err);
       state.adminToken = '';
       localStorage.removeItem('readora_admin_token');
       $('#view').innerHTML = errorView(err);
@@ -569,8 +654,6 @@
   }
 
   async function loginAdmin(form) {
-    console.log('[Readora] loginAdmin() triggered');
-
     const debug = $('#adminLoginDebug');
     const button = $('#adminLoginButton');
 
@@ -581,23 +664,17 @@
       const email = form.email.value.trim();
       const password = form.password.value;
 
-      console.log('[Readora] POST /api/admin/login', { email });
-
       const out = await api('/api/admin/login', {
         method: 'POST',
         body: JSON.stringify({ email, password })
       });
 
-      console.log('[Readora] admin login success', out);
-
       state.adminToken = out.token || 'cookie';
       localStorage.setItem('readora_admin_token', state.adminToken);
 
       toast('Admin login successful');
-      location.hash = '#admin';
       render();
     } catch (err) {
-      console.error('[Readora] admin login failed', err);
       if (debug) debug.textContent = err.message;
       toast(err.message);
     } finally {
@@ -606,7 +683,6 @@
   }
 
   function logoutAdmin() {
-    console.log('[Readora] logoutAdmin');
     state.adminToken = '';
     localStorage.removeItem('readora_admin_token');
     api('/api/admin/logout', { method: 'POST' }).catch(() => {});
@@ -614,8 +690,6 @@
   }
 
   async function createBook(form) {
-    console.log('[Readora] createBook() triggered');
-
     const debug = $('#addBookDebug');
 
     try {
@@ -640,8 +714,6 @@
         featured: Boolean(form.featured.checked)
       };
 
-      console.log('[Readora] POST /api/admin/books', body);
-
       await api('/api/admin/books', {
         method: 'POST',
         body: JSON.stringify(body)
@@ -651,7 +723,6 @@
       toast('Book created');
       location.hash = '#browse';
     } catch (err) {
-      console.error('[Readora] createBook failed', err);
       if (debug) debug.textContent = err.message;
       toast(err.message);
     }
@@ -660,7 +731,7 @@
   function renderSimplePage(name) {
     const key = name.toLowerCase();
     const pages = {
-      about: ['About Readora', 'Readora is a premium digital bookstore for discovering ebooks, reading selected free titles online, and buying paid ebooks with secure Bitcoin checkout.'],
+      about: ['About Readora', 'Readora is a premium digital bookstore for discovering ebooks, reading selected free titles online, and buying paid ebooks with secure crypto checkout.'],
       contact: ['Contact', 'For support, purchase help, author submissions, refunds for failed downloads, or security reports, contact support@readora.example. Replace this with your real support email.'],
       privacy: ['Privacy Policy', 'Readora collects only what is needed for purchases, download security, admin audit logs, and reader progress. We do not sell personal data.'],
       terms: ['Terms of Service', 'Free books are provided for online reading unless download is explicitly enabled. Paid ebook download links are one-time only and expire after first redemption or after 24 hours.']
@@ -689,8 +760,6 @@
   }
 
   function render() {
-    console.log('[Readora] render()', location.href);
-
     setWish();
 
     const { path, params } = parseRoute();
@@ -714,7 +783,6 @@
     if (!target) return;
 
     const action = target.dataset.action;
-    console.log('[Readora] click action', action, target.dataset);
 
     if (action === 'wishlist') {
       event.preventDefault();
@@ -735,6 +803,18 @@
       return;
     }
 
+    if (action === 'poll-payment') {
+      event.preventDefault();
+      if (state.pendingPurchase) pollPaymentStatus(state.pendingPurchase);
+      return;
+    }
+
+    if (action === 'redeem-download') {
+      event.preventDefault();
+      redeemDownload(target.dataset.token);
+      return;
+    }
+
     if (action === 'logout-admin') {
       event.preventDefault();
       logoutAdmin();
@@ -744,7 +824,6 @@
 
   document.addEventListener('submit', function (event) {
     const form = event.target;
-    console.log('[Readora] submit', form.id);
 
     if (form.id === 'globalSearch') {
       event.preventDefault();
@@ -755,6 +834,7 @@
 
     if (form.id === 'browseForm') {
       event.preventDefault();
+
       const fd = new FormData(form);
       const qs = new URLSearchParams();
 
@@ -786,8 +866,6 @@
   });
 
   document.addEventListener('DOMContentLoaded', function () {
-    console.log('[Readora] DOMContentLoaded');
-
     const menuBtn = $('#menuBtn');
     const mobileNav = $('#mobileNav');
 
@@ -805,8 +883,8 @@
     state,
     api,
     render,
-    loginAdmin,
-    logoutAdmin
+    pollPaymentStatus,
+    redeemDownload
   };
 })();
 </script>
