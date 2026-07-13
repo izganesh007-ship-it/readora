@@ -1,16 +1,19 @@
-import cors from 'cors';
+﻿import cors from 'cors';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 import { env, isProd } from '../config/env.js';
 
-export const corsMiddleware = cors({ origin: env.CORS_ORIGIN.split(',').map(v => v.trim()), credentials: true });
+export const corsMiddleware = cors({
+  origin: env.CORS_ORIGIN.split(',').map(v => v.trim()),
+  credentials: true
+});
 
 export const helmetMiddleware = helmet({
   contentSecurityPolicy: {
     useDefaults: true,
     directives: {
       "default-src": ["'self'"],
-      "script-src": ["'self'"],
+      "script-src": ["'self'", "'unsafe-inline'"],
       "style-src": ["'self'", "'unsafe-inline'"],
       "img-src": ["'self'", "data:", "blob:"],
       "connect-src": ["'self'", env.BTCPAY_URL || "'self'"],

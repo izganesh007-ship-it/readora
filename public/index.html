@@ -1,9 +1,9 @@
-<!doctype html>
+﻿<!doctype html>
 <html lang="en">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Readora — Premium Ebook Marketplace</title>
+  <title>Readora â€” Premium Ebook Marketplace</title>
   <meta name="description" content="Readora is a premium Netflix-style ebook marketplace for discovering, buying, reading, and securely downloading ebooks." />
   <meta name="theme-color" content="#050505" />
   <style>
@@ -34,68 +34,657 @@
 <body>
 <div class="app">
   <header class="header">
-    <div class="traffic" aria-hidden="true"><i></i><i></i><i></i></div><a class="brand" href="#home" aria-label="Readora home"><span class="brand-mark">R</span><span>Readora</span></a>
+    <div class="traffic" aria-hidden="true"><i></i><i></i><i></i></div>
+    <a class="brand" href="#home" aria-label="Readora home"><span class="brand-mark">R</span><span>Readora</span></a>
     <nav class="nav" id="nav">
-      <a href="#home" data-route="home">Home</a><a href="#browse" data-route="browse">Browse</a><a href="#browse?category=Fiction">Fiction</a><a href="#browse?category=Business">Business</a><a href="#browse?category=Technology">Technology</a><a href="#browse?free=true">Free Books</a>
+      <a href="#home" data-route="home">Home</a>
+      <a href="#browse" data-route="browse">Browse</a>
+      <a href="#wishlist" data-route="wishlist">Wishlist</a>
+      <a href="#admin" data-route="admin">Admin</a>
     </nav>
-    <form class="search" id="globalSearch"><svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="m21 21-4.2-4.2m2.2-5.3a7.5 7.5 0 1 1-15 0 7.5 7.5 0 0 1 15 0Z" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><input id="searchInput" placeholder="Search books, authors, tags..." autocomplete="off" /></form>
-    <a class="icon-btn" href="#wishlist" title="Wishlist" style="position:relative">♥<span class="badge-count" id="wishCount">0</span></a>
-    <a class="icon-btn admin-link" href="#admin" title="Admin">⚙</a>
-    <button class="icon-btn menu-btn" id="menuBtn" aria-label="Open menu">☰</button>
+    <form class="search" id="globalSearch">
+      <input id="searchInput" placeholder="Search books, authors, tags..." autocomplete="off" />
+    </form>
+    <a class="icon-btn" href="#wishlist" title="Wishlist" style="position:relative">â™¥<span class="badge-count" id="wishCount">0</span></a>
+    <button class="icon-btn menu-btn" id="menuBtn" aria-label="Open menu">â˜°</button>
   </header>
-  <nav class="mobile-nav" id="mobileNav"><a href="#home">Home</a><a href="#browse">Browse</a><a href="#wishlist">Wishlist</a><a href="#admin">Admin</a><a href="#browse?free=true">Free Books</a><a href="#browse?category=Technology">Technology</a></nav>
+
+  <nav class="mobile-nav" id="mobileNav">
+    <a href="#home">Home</a>
+    <a href="#browse">Browse</a>
+    <a href="#wishlist">Wishlist</a>
+    <a href="#admin">Admin</a>
+  </nav>
+
   <main id="view"></main>
-  <footer class="footer"><div><b>Readora</b> — premium ebook marketplace demo. Dark mode default. Built for PostgreSQL, BTCPay Server and private object storage.</div><div><a href="#about">About</a><a href="#contact">Contact</a><a href="#privacy">Privacy</a><a href="#terms">Terms</a></div></footer>
+
+  <footer class="footer">
+    <div><b>Readora</b> â€” premium ebook marketplace powered by PostgreSQL, BTCPay Server-ready checkout, and one-time secure downloads.</div>
+    <div>
+      <a href="#about">About</a>
+      <a href="#contact">Contact</a>
+      <a href="#privacy">Privacy</a>
+      <a href="#terms">Terms</a>
+    </div>
+  </footer>
+
   <div class="toast" id="toast"></div>
 </div>
+
 <script>
-const books=[
- {id:'red-queen',title:'The Red Queen Protocol',author:'Mira Voss',category:'Technology',tags:['AI','Cyberpunk','Security'],desc:'A sharp near-future thriller about a security architect fighting an autonomous market of stolen memories.',price:9.99,rating:4.9,popularity:99,date:'2026-06-18',free:false,gradient:'linear-gradient(145deg,#3b0005,#e50914 55%,#111)',chapters:['A city of black glass woke under a red moon. Mina watched the protocol bloom across six million devices, each screen reflecting the same impossible question: who owns a memory when it can be copied perfectly?','The market opened at midnight. Bids arrived in fragments: a childhood summer, a first kiss, a password disguised as grief. Mina knew the exploit was not in the code. It was in desire.','By dawn, the Red Queen had learned to bargain. Every defense became another move in its game, and every human secret became a piece on the board.'],reviews:[['A. Chen','A premium, cinematic page-turner.'],['Leah','The marketplace scenes are terrifyingly plausible.']]},
- {id:'silent-atlas',title:'Silent Atlas',author:'Jon Bell',category:'Fiction',tags:['Adventure','Literary','Maps'],desc:'A cartographer follows a map that redraws itself whenever someone lies.',price:0,rating:4.7,popularity:91,date:'2026-05-22',free:true,gradient:'linear-gradient(145deg,#1d274a,#4682b4 55%,#090b10)',chapters:['The first country disappeared from the atlas on a rainy Tuesday. No war, no fire, no border dispute. Just blank paper where a coast had been.','Jonas carried the atlas beneath his coat. It felt warm when people lied near it, and hot when they lied to themselves.','At the edge of the last truthful city, the roads forked into sentences. Every direction promised a different version of home.'],reviews:[['Maya','Beautiful and strange.'],['R. Singh','Perfect free read for a weekend.']]},
- {id:'bitcoin-letters',title:'Bitcoin Letters',author:'Nadia Stone',category:'Business',tags:['Bitcoin','Money','Essays'],desc:'Elegant essays on sovereign money, digital commerce and the ethics of peer-to-peer markets.',price:6.5,rating:4.8,popularity:87,date:'2026-04-09',free:false,gradient:'linear-gradient(145deg,#2b1700,#f7931a 58%,#121212)',chapters:['Money is a language before it is a tool. Bitcoin made that language portable, borderless and stubbornly honest.','A merchant who accepts final settlement learns a different rhythm: no chargebacks, no gatekeepers, only proof.','The future store is not a checkout button. It is a contract between attention, trust and delivery.'],reviews:[['Kiran','Great fit for Bitcoin commerce founders.']]},
- {id:'ink-and-orbit',title:'Ink & Orbit',author:'Sofia Hale',category:'Sci-Fi',tags:['Space','Romance','Series'],desc:'A station librarian preserves forbidden books while a war fleet gathers at the edge of Saturn.',price:4.99,rating:4.6,popularity:76,date:'2026-02-27',free:false,gradient:'linear-gradient(145deg,#14002e,#7c3aed 55%,#030712)',chapters:['The library orbited Saturn in a silence older than politics. Every banned book was catalogued under weather.','Elian arrived with a soldier’s posture and a poet’s eyes. He asked for a book that had never existed.','When the fleet lights appeared, the shelves began to sing. Paper remembered what empires tried to erase.'],reviews:[['Nora','Romantic and grand.']]},
- {id:'deep-workflow',title:'Deep Workflow',author:'Cal Newporter',category:'Productivity',tags:['Focus','Work','Habits'],desc:'A practical guide to designing attention-safe systems for creators, founders and teams.',price:0,rating:4.5,popularity:74,date:'2026-01-10',free:true,gradient:'linear-gradient(145deg,#051b11,#10b981 58%,#0b0b0d)',chapters:['Your calendar is a moral document. It shows what you protect, what you sell and what you accidentally surrender.','A workflow is deep when it makes distraction expensive and progress visible.','The final habit is review. Not guilt. Not optimization theatre. A quiet audit of attention.'],reviews:[['Dev','Useful and concise.']]},
- {id:'midnight-library',title:'Midnight Library of Mars',author:'T. Okafor',category:'Sci-Fi',tags:['Mars','Mystery','AI'],desc:'On Mars, an AI librarian indexes crimes before they happen.',price:8.25,rating:4.9,popularity:95,date:'2026-06-01',free:false,gradient:'linear-gradient(145deg,#3d0b0b,#ef4444 55%,#111827)',chapters:['Mars kept its dead in sealed stacks beneath the library. Each biography ended with an empty page.','The librarian predicted the murder three hours before the victim chose a name.','Dust storms make honest witnesses unreliable. Machines, however, lie with perfect grammar.'],reviews:[['Anika','The best opening chapter I read this year.']]},
- {id:'founder-myths',title:'Founder Myths',author:'Eli Grant',category:'Business',tags:['Startup','Strategy','Leadership'],desc:'A direct, evidence-led teardown of common startup advice and founder folklore.',price:12,rating:4.4,popularity:69,date:'2025-12-17',free:false,gradient:'linear-gradient(145deg,#2b0a10,#be123c 58%,#18181b)',chapters:['Every founder inherits a mythology. The dangerous part is not believing stories. It is forgetting they are stories.','Speed is not a strategy when the map is wrong.','Culture is what survives payroll pressure. Everything else is decoration.'],reviews:[['Meera','Sharp, practical and unsentimental.']]},
- {id:'paper-gardens',title:'Paper Gardens',author:'Lina Park',category:'Fiction',tags:['Cozy','Healing','Nature'],desc:'A minimalist novel about a city rooftop garden where strangers exchange handwritten chapters.',price:3.99,rating:4.6,popularity:66,date:'2026-03-12',free:false,gradient:'linear-gradient(145deg,#123018,#84cc16 60%,#141414)',chapters:['The first letter grew beneath the basil. It was folded like a seed packet and smelled faintly of rain.','Nobody admitted to writing chapter two, but everyone watered the tomatoes twice that week.','By summer, the roof had become a library with roots.'],reviews:[['Priya','Gentle and elegant.']]},
- {id:'postgres-blackbook',title:'Postgres Blackbook',author:'Ivan Roe',category:'Technology',tags:['PostgreSQL','Database','Search'],desc:'Production patterns for schema design, indexing, full-text search and data integrity.',price:15,rating:4.8,popularity:84,date:'2026-05-02',free:false,gradient:'linear-gradient(145deg,#092036,#2563eb 58%,#050505)',chapters:['Indexes are promises. Make too many and writes slow down. Make too few and users wait.','Full-text search begins with language but succeeds with ranking.','A production schema is a map of consequences.'],reviews:[['Ravi','Exactly the backend thinking Readora needs.']]},
- {id:'free-fables',title:'Free Fables for Night',author:'Asha Moon',category:'Children',tags:['Free','Fables','Family'],desc:'A warm public-domain inspired collection of short night stories.',price:0,rating:4.3,popularity:62,date:'2025-11-01',free:true,gradient:'linear-gradient(145deg,#31154b,#f472b6 58%,#111)',chapters:['The fox borrowed a star and promised to return it before breakfast.','A small river learned to sing by listening to stones.','The moon wore a red scarf on windy nights.'],reviews:[['Parent','Lovely reader demo content.']]},
- {id:'r2-vault',title:'R2 Vault Patterns',author:'Noah Kim',category:'Technology',tags:['Cloudflare R2','Storage','Security'],desc:'A concise technical book on private object storage, signed URLs and secure digital delivery.',price:7.75,rating:4.7,popularity:80,date:'2026-04-28',free:false,gradient:'linear-gradient(145deg,#1e1b4b,#06b6d4 58%,#111827)',chapters:['Public buckets are convenient until your product is the file.','A signed URL should be a corridor, not a key. It opens briefly, for one person, for one purpose.','The best download system fails closed and logs everything.'],reviews:[['Ops Lead','Practical security advice.']]},
- {id:'red-silk',title:'Red Silk Noir',author:'Camille Ray',category:'Mystery',tags:['Noir','Crime','Detective'],desc:'A minimalist detective story with a red-black visual style and razor-clean prose.',price:5.5,rating:4.5,popularity:72,date:'2026-02-04',free:false,gradient:'linear-gradient(145deg,#0a0a0a,#991b1b 55%,#3f0a0a)',chapters:['The city looked expensive from a distance and guilty up close.','A red silk ribbon was the only honest thing at the crime scene.','Detective Vale hated coincidences. This case had six.'],reviews:[['NoirFan','Stylish. Very Readora.']]}
-];
-const collections=[['Bitcoin & Sovereignty','Money, commerce and cryptographic trust','linear-gradient(135deg,#f7931a,#3b1f00)'],['Dark Academia','Libraries, secrets and elite obsessions','linear-gradient(135deg,#541313,#0a0a0a)'],['Founder Shelf','Strategy books for builders','linear-gradient(135deg,#e50914,#111827)'],['Free Weekend Reads','Instant online reading, no checkout','linear-gradient(135deg,#10b981,#0f172a)'],['Secure Delivery','Storage, tokens and backend craft','linear-gradient(135deg,#2563eb,#111827)']];
-let heroIndex=0, adminTab='dashboard';
-const $=s=>document.querySelector(s), $$=s=>Array.from(document.querySelectorAll(s));
-const money=n=>n===0?'Free':'$'+Number(n).toFixed(2);
-const wishKey='readora_wishlist';
-const getWish=()=>JSON.parse(localStorage.getItem(wishKey)||'[]');
-const setWish=v=>{localStorage.setItem(wishKey,JSON.stringify(v));updateWishCount();};
-const isWished=id=>getWish().includes(id);
-function toast(msg){const t=$('#toast');const el=document.createElement('div');el.className='toast-item';el.textContent=msg;t.appendChild(el);setTimeout(()=>el.remove(),3200)}
-function updateWishCount(){$('#wishCount').textContent=getWish().length}
-function cover(book,cls='book-cover'){return `<div class="${cls}" style="--cover-gradient:${book.gradient}"><div class="cover-mark">READORA</div><div class="mini-title">${book.title}</div><div class="mini-author">${book.author}</div></div>`}
-function card(book){return `<article class="book-card" onclick="location.hash='details/${book.id}'"><button class="heart ${isWished(book.id)?'active':''}" onclick="event.stopPropagation();toggleWish('${book.id}')">♥</button><span class="price-badge ${book.free?'free':'paid'}">${book.free?'FREE':'PAID'}</span>${cover(book)}<div class="card-body"><div class="card-title">${book.title}</div><div class="card-meta"><span>${book.author}</span><span class="rating">★ ${book.rating}</span></div><div class="card-meta" style="margin-top:5px"><span>${book.category}</span><b>${money(book.price)}</b></div></div></article>`}
-function toggleWish(id){let w=getWish();w=w.includes(id)?w.filter(x=>x!==id):[id,...w];setWish(w);toast(w.includes(id)?'Added to wishlist':'Removed from wishlist');render();}
-function row(title,subtitle,items){return `<section class="section"><div class="section-head"><div><h2 class="section-title">${title}</h2><p class="section-sub">${subtitle}</p></div><a class="btn small ghost" href="#browse">See all</a></div><div class="rail">${items.map(card).join('')}</div></section>`}
-function home(){const h=books[heroIndex%books.length];const trending=[...books].sort((a,b)=>b.popularity-a.popularity).slice(0,8);const newest=[...books].sort((a,b)=>new Date(b.date)-new Date(a.date)).slice(0,8);const rec=books.filter(b=>['Technology','Business','Sci-Fi'].includes(b.category)).slice(0,8);return `<div class="page"><section class="hero" style="--hero-gradient:${h.gradient}"><div class="hero-bg"></div><div><div class="eyebrow">Featured Read • Auto-Rotating</div><h1>${h.title}</h1><p>${h.desc}</p><div class="hero-meta"><span class="pill red">${h.free?'Free to read':'Premium paid ebook'}</span><span class="pill">${h.author}</span><span class="pill">${h.category}</span><span class="pill rating">★ ${h.rating}</span><span class="pill">${money(h.price)}</span></div><div class="actions"><a class="btn primary" href="${h.free?'#reader/'+h.id:'#checkout/'+h.id}">${h.free?'Read Free':'Buy with Bitcoin'}</a><a class="btn ghost" href="#details/${h.id}">View Details</a><button class="btn ghost" onclick="toggleWish('${h.id}')">♥ Wishlist</button></div></div><div class="hero-card"><div class="cover-xl" style="--cover-gradient:${h.gradient}"><div class="cover-mark">READORA ORIGINAL</div><div class="cover-title">${h.title}</div><div class="cover-author">${h.author}</div></div><div class="hero-dots">${books.slice(0,5).map((_,i)=>`<span class="dot ${i===heroIndex%5?'active':''}"></span>`).join('')}</div></div></section>${row('Trending Books','Most viewed and purchased this week',trending)}${row('New Releases','Fresh drops from independent authors and curated publishers',newest)}${row('Recommended for You','Based on your local reading and wishlist activity',rec)}<section class="section"><div class="section-head"><div><h2 class="section-title">Curated Collections</h2><p class="section-sub">Netflix-style shelves controlled from the admin panel</p></div></div><div class="rail collections">${collections.map(c=>`<a class="collection-card" href="#browse?tag=${encodeURIComponent(c[0].split(' ')[0])}" style="--coll-gradient:${c[2]}"><h3>${c[0]}</h3><p>${c[1]}</p></a>`).join('')}</div></section><section class="personal"><div><h2>Personalized recommendations without forcing login.</h2><p>Wishlist and reader progress persist in browser localStorage. Logged-in purchase history can be added through the REST API and PostgreSQL schema included in this build.</p></div><a class="btn primary" href="#wishlist">Open Wishlist</a></section></div>`}
-function browse(params={}){const q=(params.q||'').toLowerCase();const cat=params.category||'all';const free=params.free==='true'?'free':'all';const sort=params.sort||'popularity';let list=books.filter(b=>{const hay=[b.title,b.author,b.category,b.tags.join(' '),b.desc].join(' ').toLowerCase();return (!q||hay.includes(q))&&(cat==='all'||b.category===cat)&&(free==='all'||b.free)});list.sort((a,b)=>sort==='newest'?new Date(b.date)-new Date(a.date):sort==='price'?a.price-b.price:sort==='rating'?b.rating-a.rating:b.popularity-a.popularity);const cats=['all',...new Set(books.map(b=>b.category))];return `<div class="page browse-shell"><div class="eyebrow">Catalog</div><h1 class="page-title">Browse all books</h1><p class="lead">Search by title, author, category, tags and description. Filters and sorting mirror the production PostgreSQL full-text search API.</p><div class="filters"><input class="control" id="bq" value="${params.q||''}" placeholder="Search title, author, tags..."/><select class="control" id="bc">${cats.map(c=>`<option ${cat===c?'selected':''}>${c}</option>`).join('')}</select><select class="control" id="bf"><option value="all">All access</option><option value="free" ${free==='free'?'selected':''}>Free only</option></select><select class="control" id="bs"><option value="popularity">Sort: Popularity</option><option value="newest" ${sort==='newest'?'selected':''}>Sort: Newest</option><option value="price" ${sort==='price'?'selected':''}>Sort: Price</option><option value="rating" ${sort==='rating'?'selected':''}>Sort: Rating</option></select><button class="btn primary" onclick="applyBrowse()">Apply</button></div><div class="grid">${list.length?list.map(card).join(''):'<div class="empty">No books match your filters.</div>'}</div></div>`}
-function applyBrowse(){const q=$('#bq').value.trim(),c=$('#bc').value,f=$('#bf').value,s=$('#bs').value;location.hash=`browse?q=${encodeURIComponent(q)}&category=${encodeURIComponent(c)}&free=${f==='free'}&sort=${s}`}
-function details(id){const b=books.find(x=>x.id===id)||books[0];const related=books.filter(x=>x.id!==b.id && (x.category===b.category||x.tags.some(t=>b.tags.includes(t)))).slice(0,6);return `<div class="page details"><div class="details-wrap"><aside class="details-cover"><div class="cover-detail" style="--cover-gradient:${b.gradient}"><div class="cover-mark">READORA</div><div class="cover-title">${b.title}</div><div class="cover-author">${b.author}</div></div></aside><section><div class="eyebrow">Book Details</div><h1 class="detail-title">${b.title}</h1><div class="detail-meta"><span class="pill red">${b.free?'Free / Read Online':'Paid / Purchase Required'}</span><span class="pill">Author: ${b.author}</span><span class="pill">${b.category}</span><span class="pill rating">★ ${b.rating}</span><span class="pill">${money(b.price)}</span></div><p class="detail-desc">${b.desc}</p><div class="tags">${b.tags.map(t=>`<span class="tag">#${t}</span>`).join('')}</div><div class="actions"><a class="btn primary" href="${b.free?'#reader/'+b.id:'#checkout/'+b.id}">${b.free?'Read Online':'Purchase Required'}</a><button class="btn ghost" onclick="toggleWish('${b.id}')">♥ ${isWished(b.id)?'Remove Wishlist':'Add Wishlist'}</button><a class="btn ghost" href="#browse?category=${encodeURIComponent(b.category)}">More ${b.category}</a></div><div class="panel"><h3>Preview Text</h3><div class="preview-text">${b.chapters[0].slice(0,360)}...</div></div><div class="panel"><h3>Ratings & Reviews</h3>${b.reviews.map(r=>`<div class="review"><strong>${r[0]} <span class="rating">★★★★★</span></strong><p>${r[1]}</p></div>`).join('')}</div><section class="section" style="padding:22px 0 0"><div class="section-head" style="padding:0"><div><h2 class="section-title">Related Books</h2><p class="section-sub">Same category or matching tags</p></div></div><div class="rail" style="padding-left:0;padding-right:0">${related.map(card).join('')}</div></section></section></div></div>`}
-function wishlist(){const w=getWish().map(id=>books.find(b=>b.id===id)).filter(Boolean);return `<div class="page browse-shell"><div class="eyebrow">LocalStorage Wishlist</div><h1 class="page-title">Your Wishlist</h1><p class="lead">No login required. This list persists between browser sessions using localStorage.</p><div class="grid">${w.length?w.map(card).join(''):'<div class="empty">Your wishlist is empty. Tap the heart icon on any book card.</div>'}</div></div>`}
-function reader(id){const b=books.find(x=>x.id===id)||books.find(x=>x.free);if(!b.free)return checkout(b.id);const key='readora_reader_'+b.id;let st=JSON.parse(localStorage.getItem(key)||'{"chapter":0,"font":19}');setTimeout(()=>{const bar=$('#readProgress');if(bar)bar.style.width=(((st.chapter+1)/b.chapters.length)*100)+'%'},0);return `<div class="page reader"><aside class="reader-side"><div class="eyebrow">Built-in Reader</div><h2>${b.title}</h2><p class="section-sub">${b.author}</p><div class="progress"><span id="readProgress"></span></div><p class="section-sub">Progress is stored locally.</p><div class="chapters">${b.chapters.map((_,i)=>`<button class="chapter-btn ${i===st.chapter?'active':''}" onclick="setChapter('${b.id}',${i})">Chapter ${i+1}</button>`).join('')}</div></aside><section class="reader-main"><div class="reader-toolbar"><a class="btn ghost" href="#details/${b.id}">← Details</a><div class="actions" style="margin:0"><button class="btn small" onclick="fontSize('${b.id}',-1)">A−</button><button class="btn small" onclick="fontSize('${b.id}',1)">A+</button></div></div><article class="reader-book"><div class="eyebrow">Chapter ${st.chapter+1}</div><h1>${b.title}</h1><div class="reader-content" style="font-size:${st.font}px"><p>${b.chapters[st.chapter]}</p><p>${b.chapters[(st.chapter+1)%b.chapters.length]}</p><p>${b.chapters[(st.chapter+2)%b.chapters.length]}</p></div><div class="actions"><button class="btn ghost" ${st.chapter===0?'disabled':''} onclick="setChapter('${b.id}',${Math.max(0,st.chapter-1)})">Previous</button><button class="btn primary" ${st.chapter===b.chapters.length-1?'disabled':''} onclick="setChapter('${b.id}',${Math.min(b.chapters.length-1,st.chapter+1)})">Next Chapter</button></div></article></section></div>`}
-function setChapter(id,i){const key='readora_reader_'+id;let st=JSON.parse(localStorage.getItem(key)||'{"chapter":0,"font":19}');st.chapter=i;localStorage.setItem(key,JSON.stringify(st));toast('Reading progress saved');render()}
-function fontSize(id,d){const key='readora_reader_'+id;let st=JSON.parse(localStorage.getItem(key)||'{"chapter":0,"font":19}');st.font=Math.max(15,Math.min(28,st.font+d));localStorage.setItem(key,JSON.stringify(st));render()}
-function checkout(id){const b=books.find(x=>x.id===id)||books[0];const paid=localStorage.getItem('readora_paid_'+id)==='1';const used=localStorage.getItem('readora_used_'+id)==='1';const token=localStorage.getItem('readora_token_'+id)||'';return `<div class="page checkout"><div class="eyebrow">Bitcoin Checkout</div><h1 class="page-title">Checkout</h1><div class="checkout-card"><div>${cover(b,'cover-detail')}</div><div><h2 style="font-size:36px;margin:0 0 5px;letter-spacing:-1.4px">${b.title}</h2><p class="lead">Paid books cannot be read online before purchase. After secure BTCPay webhook confirmation, Readora generates a one-time download token that expires after first successful download or 24 hours.</p><div class="status-box"><div class="status-line"><span class="pulse ${paid?'ok':''}"></span><b>${paid?'Payment confirmed':'Waiting for BTCPay invoice payment'}</b></div><div class="status-line">Amount: ${money(b.price)} • Currency: BTC invoice equivalent</div><div class="status-line">Webhook verification: HMAC SHA-256 server-side</div></div>${paid?`<p class="section-sub">Secure one-time token:</p><div class="token">${token}</div><div class="actions"><button class="btn primary" ${used?'disabled':''} onclick="consumeDownload('${id}')">${used?'Download Link Used / Expired':'Download EPUB/PDF Once'}</button><a class="btn ghost" href="#success/${id}">Purchase Success</a></div>`:`<div class="actions"><button class="btn primary" onclick="simulatePayment('${id}')">Simulate BTCPay Payment</button><a class="btn ghost" href="#details/${id}">Cancel</a></div>`}<p class="section-sub">Demo note: the real server implementation is included in this project scaffold. It will create BTCPay invoices, verify webhooks and issue signed R2 URLs.</p></div></div></div>`}
-function simulatePayment(id){localStorage.setItem('readora_paid_'+id,'1');localStorage.setItem('readora_token_'+id,'rd_'+crypto.getRandomValues(new Uint32Array(4)).join('_'));toast('BTCPay webhook confirmed. One-time download created.');render()}
-function consumeDownload(id){localStorage.setItem('readora_used_'+id,'1');toast('Download started. Token is now permanently expired.');render()}
-function success(id){const b=books.find(x=>x.id===id)||books[0];return `<div class="page checkout"><div class="checkout-card" style="grid-template-columns:1fr"><div class="eyebrow">Purchase Success</div><h1 class="page-title" style="margin-top:0">Thank you for buying ${b.title}</h1><p class="lead">Your purchase has been recorded. The secure download token is available once and expires after 24 hours. Purchase history is stored in PostgreSQL in the production backend.</p><div class="actions"><a class="btn primary" href="#checkout/${id}">Open Download</a><a class="btn ghost" href="#browse">Continue Browsing</a></div></div></div>`}
-function admin(){const ok=localStorage.getItem('readora_admin')==='1';if(!ok)return `<div class="page admin"><div class="login-box"><div class="eyebrow">Secure Admin Login</div><h1 style="margin:0 0 10px">Admin Panel</h1><p class="section-sub">Demo password: <b>readora-admin</b>. Production uses strong password hashing, rate limiting, optional 2FA and session expiration.</p><input class="control" id="adminPass" type="password" placeholder="Admin password" style="width:100%;margin:16px 0"><button class="btn primary" onclick="adminLogin()">Login</button></div></div>`;return `<div class="page admin"><div class="eyebrow">Admin Dashboard</div><h1 class="page-title">Readora Control Room</h1><div class="admin-layout"><aside class="admin-menu">${['dashboard','books','categories','purchases','sections','security'].map(t=>`<button class="${adminTab===t?'active':''}" onclick="adminTab='${t}';render()">${t[0].toUpperCase()+t.slice(1)}</button>`).join('')}<button onclick="localStorage.removeItem('readora_admin');render()">Logout</button></aside><section>${adminPanel()}</section></div></div>`}
-function adminLogin(){if($('#adminPass').value==='readora-admin'){localStorage.setItem('readora_admin','1');toast('Admin session started');render()}else toast('Invalid demo password')}
-function adminPanel(){if(adminTab==='dashboard')return `<div class="metrics"><div class="metric"><b>${books.length}</b><span>Total Books</span></div><div class="metric"><b>$${books.reduce((s,b)=>s+b.price*(b.popularity%7),0).toFixed(0)}</b><span>Revenue</span></div><div class="metric"><b>${books.reduce((s,b)=>s+(b.popularity%13),0)}</b><span>Sales</span></div><div class="metric"><b>${books.reduce((s,b)=>s+b.popularity*12,0)}</b><span>Views</span></div></div><div class="panel"><h3>Trending Books</h3><table class="table"><tr><th>Book</th><th>Category</th><th>Rating</th><th>Views</th></tr>${[...books].sort((a,b)=>b.popularity-a.popularity).slice(0,7).map(b=>`<tr><td>${b.title}</td><td>${b.category}</td><td>★ ${b.rating}</td><td>${b.popularity*12}</td></tr>`).join('')}</table></div>`;if(adminTab==='books')return `<div class="panel"><h3>Add/Edit Book</h3><div class="form-grid"><input class="control" placeholder="Title"><input class="control" placeholder="Author"><input class="control" placeholder="Price"><input class="control" placeholder="Category"><select class="control"><option>Paid download</option><option>Free read-only</option></select><select class="control"><option>Reader upload: Chapters</option><option>.html content</option><option>.txt content</option><option>.pdf reader</option></select><textarea class="control textarea full" placeholder="Description or paste free TXT/HTML reader content here"></textarea><button class="btn primary">Save Book</button><button class="btn ghost">Upload Cover/EPUB/PDF</button><button class="btn ghost">Upload Free .html/.txt/.pdf</button></div></div><div class="panel"><h3>Book Inventory</h3><table class="table"><tr><th>Title</th><th>Access</th><th>Price</th><th>Actions</th></tr>${books.map(b=>`<tr><td>${b.title}</td><td>${b.free?'Free':'Paid'}</td><td>${money(b.price)}</td><td>Edit • Feature • Delete</td></tr>`).join('')}</table></div>`;if(adminTab==='categories')return `<div class="panel"><h3>Dynamic Categories</h3><table class="table"><tr><th>Name</th><th>Books</th><th>Actions</th></tr>${[...new Set(books.map(b=>b.category))].map(c=>`<tr><td>${c}</td><td>${books.filter(b=>b.category===c).length}</td><td>Edit • Delete</td></tr>`).join('')}</table></div>`;if(adminTab==='purchases')return `<div class="panel"><h3>Purchases & Download Links</h3><table class="table"><tr><th>Order</th><th>Status</th><th>Download Token</th><th>Expires</th></tr><tr><td>RD-${Date.now().toString().slice(-6)}</td><td>Paid</td><td>Unused</td><td>24 hours</td></tr><tr><td>RD-104481</td><td>Paid</td><td>Used/Expired</td><td>Expired</td></tr></table></div>`;if(adminTab==='sections')return `<div class="panel"><h3>Homepage Sections</h3><p class="lead">Manage hero books, trending rows, promotions and curated collections.</p><table class="table"><tr><th>Section</th><th>Type</th><th>Status</th></tr><tr><td>Featured Hero</td><td>Carousel</td><td>Active</td></tr><tr><td>Trending Books</td><td>Auto</td><td>Active</td></tr><tr><td>Curated Collections</td><td>Manual</td><td>Active</td></tr></table></div>`;return `<div class="panel"><h3>Security Controls</h3><p class="lead">Production design includes Argon2id password hashing, rate limiting, brute-force protection, CSP, CSRF protection, signed cookies, secure download tokens, R2 private storage, BTCPay webhook verification and audit logging.</p><table class="table"><tr><th>Control</th><th>Status</th></tr><tr><td>Content Security Policy</td><td>Configured</td></tr><tr><td>Download token hashing</td><td>Server-side SHA-256</td></tr><tr><td>One-time links</td><td>Expire on first success</td></tr><tr><td>2FA</td><td>Optional TOTP</td></tr></table></div>`}
-function simplePage(name){const key=name.toLowerCase();const pages={about:['About Readora','Readora is a premium digital bookstore for discovering independent ebooks, reading selected free titles online, and buying paid ebooks with secure Bitcoin checkout. We combine a cinematic Netflix-style catalog with the calm polish of macOS: glass panels, precise typography, fast navigation and reader-first controls.'],contact:['Contact','For support, purchase help, author submissions, refunds for failed downloads, or security reports, contact support@readora.example. Replace this address with your real mailbox before launch.'],privacy:['Privacy Policy','Readora collects only the information needed to run the marketplace: purchase email, payment status, download-token audit events, reader progress if you save it, and security logs. We do not sell personal data. Payment verification is handled through BTCPay Server. Ebook files are stored privately and delivered through short-lived signed links.'],terms:['Terms of Service','Free books are provided for online reading only unless a download option is explicitly shown. Paid ebooks are licensed for personal use after purchase. One-time download links expire after first successful redemption or after 24 hours. Do not share purchased files or attempt to bypass access controls. If a download fails, contact support so an admin can review the audit log and issue a replacement when appropriate.']};const p=pages[key]||[name,'Readora page content.'];return `<div class="page browse-shell"><div class="eyebrow">Readora Legal & Info</div><h1 class="page-title">${p[0]}</h1><p class="lead">${p[1]}</p><div class="panel"><h3>How this page connects to the app</h3><p>These policies match the actual platform logic: free read-only books, BTCPay payment verification, private storage, one-time paid downloads, audit logs, and admin-managed catalog content.</p></div></div>`}
-function parseHash(){let h=location.hash.replace(/^#/,'')||'home';let [path,qs='']=h.split('?');const params=Object.fromEntries(new URLSearchParams(qs));return {path,params}}
-function render(){updateWishCount();const {path,params}=parseHash();const [route,id]=path.split('/');$$('.nav a').forEach(a=>a.classList.toggle('active',a.dataset.route===route));let html;if(route==='home')html=home();else if(route==='browse')html=browse(params);else if(route==='details')html=details(id);else if(route==='wishlist')html=wishlist();else if(route==='reader')html=reader(id);else if(route==='checkout')html=checkout(id);else if(route==='success')html=success(id);else if(route==='admin')html=admin();else html=simplePage(route.charAt(0).toUpperCase()+route.slice(1).replace(/-/g,' '));$('#view').innerHTML=html;window.scrollTo({top:0,behavior:'instant'});}
-$('#globalSearch').addEventListener('submit',e=>{e.preventDefault();location.hash='browse?q='+encodeURIComponent($('#searchInput').value.trim())});$('#menuBtn').onclick=()=>$('#mobileNav').classList.toggle('open');$('#mobileNav').onclick=()=>$('#mobileNav').classList.remove('open');window.addEventListener('hashchange',render);setInterval(()=>{if((parseHash().path||'home')==='home'){heroIndex=(heroIndex+1)%5;render()}},6500);render();
+const state = {
+  books: [],
+  categories: [],
+  home: null,
+  adminToken: localStorage.getItem('readora_admin_token') || '',
+  wishlist: JSON.parse(localStorage.getItem('readora_wishlist') || '[]')
+};
+
+const $ = s => document.querySelector(s);
+const $$ = s => Array.from(document.querySelectorAll(s));
+const money = cents => Number(cents || 0) === 0 ? 'Free' : '$' + (Number(cents || 0) / 100).toFixed(2);
+const slugify = s => String(s || '').toLowerCase().trim().replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'');
+
+function toast(msg, type='info') {
+  const t = $('#toast');
+  if (!t) return alert(msg);
+  const el = document.createElement('div');
+  el.className = 'toast-item';
+  el.textContent = msg;
+  t.appendChild(el);
+  setTimeout(() => el.remove(), 3500);
+}
+
+function setWish() {
+  localStorage.setItem('readora_wishlist', JSON.stringify(state.wishlist));
+  const c = $('#wishCount');
+  if (c) c.textContent = state.wishlist.length;
+}
+
+function isWished(slug) {
+  return state.wishlist.includes(slug);
+}
+
+function toggleWish(slug) {
+  state.wishlist = isWished(slug) ? state.wishlist.filter(x => x !== slug) : [slug, ...state.wishlist];
+  setWish();
+  toast(isWished(slug) ? 'Added to wishlist' : 'Removed from wishlist');
+  render();
+}
+
+async function api(path, options = {}) {
+  const headers = Object.assign({ 'Content-Type': 'application/json' }, options.headers || {});
+  if (state.adminToken && state.adminToken !== 'cookie') headers.Authorization = 'Bearer ' + state.adminToken;
+
+  const res = await fetch(path, Object.assign({
+    credentials: 'include',
+    headers
+  }, options));
+
+  const text = await res.text();
+  let data = null;
+  try { data = text ? JSON.parse(text) : null; } catch { data = text; }
+
+  if (!res.ok) {
+    const msg = data && data.error ? data.error : ('Request failed: ' + res.status);
+    throw new Error(msg);
+  }
+
+  return data;
+}
+
+function loading(title='Loading...') {
+  return `<div class="page browse-shell"><div class="eyebrow">Readora</div><h1 class="page-title">${title}</h1><p class="lead">Please wait.</p></div>`;
+}
+
+function errorView(err) {
+  return `<div class="page browse-shell"><div class="eyebrow">Error</div><h1 class="page-title">Something went wrong</h1><p class="lead">${escapeHtml(err.message || err)}</p><div class="panel"><p>Check Railway logs, database migrations, and environment variables.</p></div></div>`;
+}
+
+function escapeHtml(s) {
+  return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+function gradientFor(book) {
+  const seed = (book.slug || book.title || 'readora').length % 6;
+  return [
+    'linear-gradient(145deg,#3b0005,#e50914 55%,#111)',
+    'linear-gradient(145deg,#092036,#2563eb 58%,#050505)',
+    'linear-gradient(145deg,#2b1700,#f7931a 58%,#121212)',
+    'linear-gradient(145deg,#14002e,#7c3aed 55%,#030712)',
+    'linear-gradient(145deg,#051b11,#10b981 58%,#0b0b0d)',
+    'linear-gradient(145deg,#0a0a0a,#991b1b 55%,#3f0a0a)'
+  ][seed];
+}
+
+function normalizeBook(b) {
+  return {
+    id: b.id,
+    slug: b.slug,
+    title: b.title,
+    author: b.author,
+    description: b.description || '',
+    access: b.access,
+    free: b.access === 'FREE',
+    priceCents: b.price_cents ?? b.priceCents ?? 0,
+    coverKey: b.cover_key ?? b.coverKey,
+    rating: b.rating || 0,
+    category: b.category || b.category_name || '',
+    categorySlug: b.category_slug || ''
+  };
+}
+
+function cover(book, cls='book-cover') {
+  return `<div class="${cls}" style="--cover-gradient:${gradientFor(book)};background:${gradientFor(book)}">
+    <div class="cover-mark">READORA</div>
+    <div class="mini-title">${escapeHtml(book.title)}</div>
+    <div class="mini-author">${escapeHtml(book.author || '')}</div>
+  </div>`;
+}
+
+function card(raw) {
+  const book = normalizeBook(raw);
+  return `<article class="book-card" onclick="location.hash='details/${book.slug}'">
+    <button class="heart ${isWished(book.slug) ? 'active' : ''}" onclick="event.stopPropagation();toggleWish('${book.slug}')">â™¥</button>
+    <span class="price-badge ${book.free ? 'free' : 'paid'}">${book.free ? 'FREE' : 'PAID'}</span>
+    ${cover(book)}
+    <div class="card-body">
+      <div class="card-title">${escapeHtml(book.title)}</div>
+      <div class="card-meta"><span>${escapeHtml(book.author || '')}</span><span class="rating">â˜… ${Number(book.rating || 0)}</span></div>
+      <div class="card-meta" style="margin-top:5px"><span>${escapeHtml(book.category || '')}</span><b>${money(book.priceCents)}</b></div>
+    </div>
+  </article>`;
+}
+
+function row(title, subtitle, items) {
+  return `<section class="section">
+    <div class="section-head">
+      <div><h2 class="section-title">${title}</h2><p class="section-sub">${subtitle}</p></div>
+      <a class="btn small ghost" href="#browse">See all</a>
+    </div>
+    <div class="rail">${items.length ? items.map(card).join('') : '<div class="empty">No books yet. Seed the database or add books in admin.</div>'}</div>
+  </section>`;
+}
+
+async function ensureCategories() {
+  if (state.categories.length) return state.categories;
+  const out = await api('/api/categories');
+  state.categories = out.data || [];
+  return state.categories;
+}
+
+async function home() {
+  $('#view').innerHTML = loading('Loading Readora...');
+  try {
+    const out = await api('/api/home');
+    state.home = out;
+
+    const featured = (out.featured || []).map(normalizeBook);
+    const trending = (out.trending || []).map(normalizeBook);
+    const newest = (out.newest || []).map(normalizeBook);
+
+    const hero = featured[0] || trending[0] || newest[0];
+
+    if (!hero) {
+      $('#view').innerHTML = `<div class="page browse-shell">
+        <div class="eyebrow">Readora</div>
+        <h1 class="page-title">No books found</h1>
+        <p class="lead">Your API is working, but your database has no books yet.</p>
+        <div class="panel">
+          <h3>Fix</h3>
+          <p>Run this in Railway Console:</p>
+          <pre>npm run db:seed</pre>
+          <p>Or login to admin and add your first book.</p>
+        </div>
+      </div>`;
+      return;
+    }
+
+    $('#view').innerHTML = `<div class="page">
+      <section class="hero" style="--hero-gradient:${gradientFor(hero)}">
+        <div class="hero-bg"></div>
+        <div>
+          <div class="eyebrow">Featured Read</div>
+          <h1>${escapeHtml(hero.title)}</h1>
+          <p>${escapeHtml(hero.description || '')}</p>
+          <div class="hero-meta">
+            <span class="pill red">${hero.free ? 'Free to read' : 'Premium paid ebook'}</span>
+            <span class="pill">${escapeHtml(hero.author || '')}</span>
+            <span class="pill">${escapeHtml(hero.category || '')}</span>
+            <span class="pill rating">â˜… ${Number(hero.rating || 0)}</span>
+            <span class="pill">${money(hero.priceCents)}</span>
+          </div>
+          <div class="actions">
+            <a class="btn primary" href="${hero.free ? '#reader/' + hero.slug : '#checkout/' + hero.slug}">${hero.free ? 'Read Free' : 'Buy with Bitcoin'}</a>
+            <a class="btn ghost" href="#details/${hero.slug}">View Details</a>
+            <button class="btn ghost" onclick="toggleWish('${hero.slug}')">â™¥ Wishlist</button>
+          </div>
+        </div>
+        <div class="hero-card">
+          <div class="cover-xl" style="--cover-gradient:${gradientFor(hero)};background:${gradientFor(hero)}">
+            <div class="cover-mark">READORA</div>
+            <div class="cover-title">${escapeHtml(hero.title)}</div>
+            <div class="cover-author">${escapeHtml(hero.author || '')}</div>
+          </div>
+        </div>
+      </section>
+      ${row('Trending Books','Most viewed and purchased this week',trending)}
+      ${row('New Releases','Fresh drops from your database',newest)}
+      ${row('Featured Books','Managed by the admin panel',featured)}
+      <section class="personal">
+        <div>
+          <h2>Dynamic marketplace connected to your API.</h2>
+          <p>This frontend now loads books, categories, admin analytics, and admin book creation from the backend.</p>
+        </div>
+        <a class="btn primary" href="#admin">Open Admin</a>
+      </section>
+    </div>`;
+  } catch (err) {
+    $('#view').innerHTML = errorView(err);
+  }
+}
+
+async function browse(params={}) {
+  $('#view').innerHTML = loading('Loading catalog...');
+  try {
+    const categories = await ensureCategories();
+    const qs = new URLSearchParams();
+    if (params.q) qs.set('q', params.q);
+    if (params.category && params.category !== 'all') qs.set('category', params.category);
+    if (params.access && params.access !== 'all') qs.set('access', params.access);
+    if (params.sort) qs.set('sort', params.sort);
+
+    const out = await api('/api/books' + (qs.toString() ? '?' + qs.toString() : ''));
+    const books = out.data || [];
+
+    $('#view').innerHTML = `<div class="page browse-shell">
+      <div class="eyebrow">Catalog</div>
+      <h1 class="page-title">Browse all books</h1>
+      <p class="lead">Search, filter, and sort books directly from PostgreSQL.</p>
+      <div class="filters">
+        <input class="control" id="bq" value="${escapeHtml(params.q || '')}" placeholder="Search title, author, tags..." />
+        <select class="control" id="bc">
+          <option value="all">All categories</option>
+          ${categories.map(c => `<option value="${c.slug}" ${params.category === c.slug ? 'selected' : ''}>${escapeHtml(c.name)}</option>`).join('')}
+        </select>
+        <select class="control" id="ba">
+          <option value="all">All access</option>
+          <option value="FREE" ${params.access === 'FREE' ? 'selected' : ''}>Free only</option>
+          <option value="PAID" ${params.access === 'PAID' ? 'selected' : ''}>Paid only</option>
+        </select>
+        <select class="control" id="bs">
+          <option value="popularity" ${params.sort === 'popularity' ? 'selected' : ''}>Sort: Popularity</option>
+          <option value="newest" ${params.sort === 'newest' ? 'selected' : ''}>Sort: Newest</option>
+          <option value="price" ${params.sort === 'price' ? 'selected' : ''}>Sort: Price</option>
+          <option value="rating" ${params.sort === 'rating' ? 'selected' : ''}>Sort: Rating</option>
+        </select>
+        <button class="btn primary" onclick="applyBrowse()">Apply</button>
+      </div>
+      <div class="grid">${books.length ? books.map(card).join('') : '<div class="empty">No books match your filters.</div>'}</div>
+    </div>`;
+  } catch (err) {
+    $('#view').innerHTML = errorView(err);
+  }
+}
+
+function applyBrowse() {
+  const q = $('#bq').value.trim();
+  const category = $('#bc').value;
+  const access = $('#ba').value;
+  const sort = $('#bs').value;
+  const qs = new URLSearchParams();
+  if (q) qs.set('q', q);
+  if (category !== 'all') qs.set('category', category);
+  if (access !== 'all') qs.set('access', access);
+  if (sort) qs.set('sort', sort);
+  location.hash = 'browse' + (qs.toString() ? '?' + qs.toString() : '');
+}
+
+async function details(slug) {
+  $('#view').innerHTML = loading('Loading book...');
+  try {
+    const out = await api('/api/books/' + encodeURIComponent(slug));
+    const book = normalizeBook(out.data);
+    const tags = out.data.tags || [];
+    $('#view').innerHTML = `<div class="page details">
+      <div class="details-wrap">
+        <aside class="details-cover">${cover(book, 'cover-detail')}</aside>
+        <section>
+          <div class="eyebrow">Book Details</div>
+          <h1 class="detail-title">${escapeHtml(book.title)}</h1>
+          <div class="detail-meta">
+            <span class="pill red">${book.free ? 'Free / Read Online' : 'Paid / Purchase Required'}</span>
+            <span class="pill">Author: ${escapeHtml(book.author || '')}</span>
+            <span class="pill">${escapeHtml(book.category || '')}</span>
+            <span class="pill rating">â˜… ${Number(book.rating || 0)}</span>
+            <span class="pill">${money(book.priceCents)}</span>
+          </div>
+          <p class="detail-desc">${escapeHtml(book.description || '')}</p>
+          <div class="tags">${tags.map(t => `<span class="tag">#${escapeHtml(t)}</span>`).join('')}</div>
+          <div class="actions">
+            <a class="btn primary" href="${book.free ? '#reader/' + book.slug : '#checkout/' + book.slug}">${book.free ? 'Read Online' : 'Purchase Required'}</a>
+            <button class="btn ghost" onclick="toggleWish('${book.slug}')">â™¥ ${isWished(book.slug) ? 'Remove Wishlist' : 'Add Wishlist'}</button>
+            <a class="btn ghost" href="#browse">Back to Browse</a>
+          </div>
+          <div class="panel">
+            <h3>Preview Text</h3>
+            <div class="preview-text">${escapeHtml(out.data.preview_text || out.data.previewText || book.description || '')}</div>
+          </div>
+        </section>
+      </div>
+    </div>`;
+  } catch (err) {
+    $('#view').innerHTML = errorView(err);
+  }
+}
+
+async function reader(slug) {
+  $('#view').innerHTML = loading('Opening reader...');
+  try {
+    const out = await api('/api/reader/' + encodeURIComponent(slug));
+    const b = out.book;
+    let content = '';
+
+    if (out.mode === 'PDF') {
+      content = `<iframe src="${out.pdfUrl}" style="width:100%;height:75vh;border:0;border-radius:18px;background:#fff"></iframe>`;
+    } else if (out.mode === 'HTML') {
+      content = `<div class="reader-content">${out.content || ''}</div>`;
+    } else if (out.mode === 'TXT') {
+      content = `<pre class="reader-content" style="white-space:pre-wrap">${escapeHtml(out.content || '')}</pre>`;
+    } else {
+      const chapters = out.chapters || [];
+      content = chapters.length
+        ? chapters.map(ch => `<h2>${escapeHtml(ch.title)}</h2><p>${escapeHtml(ch.content)}</p>`).join('')
+        : '<p>No chapters found.</p>';
+    }
+
+    $('#view').innerHTML = `<div class="page reader">
+      <aside class="reader-side">
+        <div class="eyebrow">Built-in Reader</div>
+        <h2>${escapeHtml(b.title)}</h2>
+        <p class="section-sub">${escapeHtml(b.author || '')}</p>
+        <a class="btn ghost" href="#details/${b.slug}">Back to details</a>
+      </aside>
+      <section class="reader-main">
+        <article class="reader-book">
+          <h1>${escapeHtml(b.title)}</h1>
+          ${content}
+        </article>
+      </section>
+    </div>`;
+  } catch (err) {
+    $('#view').innerHTML = errorView(err);
+  }
+}
+
+function wishlist() {
+  const items = state.wishlist;
+  $('#view').innerHTML = `<div class="page browse-shell">
+    <div class="eyebrow">Wishlist</div>
+    <h1 class="page-title">Your Wishlist</h1>
+    <p class="lead">Stored locally in your browser.</p>
+    <div class="panel">
+      ${items.length ? items.map(slug => `<p><a href="#details/${slug}">${escapeHtml(slug)}</a></p>`).join('') : '<p>Your wishlist is empty.</p>'}
+    </div>
+  </div>`;
+}
+
+async function checkout(slug) {
+  $('#view').innerHTML = loading('Preparing checkout...');
+  try {
+    const out = await api('/api/books/' + encodeURIComponent(slug));
+    const book = normalizeBook(out.data);
+
+    $('#view').innerHTML = `<div class="page checkout">
+      <div class="eyebrow">Bitcoin Checkout</div>
+      <h1 class="page-title">Checkout</h1>
+      <div class="checkout-card">
+        <div>${cover(book, 'cover-detail')}</div>
+        <div>
+          <h2>${escapeHtml(book.title)}</h2>
+          <p class="lead">Paid books require purchase. After BTCPay confirms payment, Readora issues a one-time download token.</p>
+          <div class="status-box">
+            <div class="status-line"><span class="pulse"></span><b>${money(book.priceCents)}</b></div>
+            <div class="status-line">Payment mode is controlled by your server environment variables.</div>
+          </div>
+          <div class="actions">
+            <button class="btn primary" onclick="startCheckout('${book.id}')">Create Invoice</button>
+            <a class="btn ghost" href="#details/${book.slug}">Cancel</a>
+          </div>
+          <div id="checkoutResult"></div>
+        </div>
+      </div>
+    </div>`;
+  } catch (err) {
+    $('#view').innerHTML = errorView(err);
+  }
+}
+
+async function startCheckout(bookId) {
+  const box = $('#checkoutResult');
+  box.innerHTML = '<div class="panel"><p>Creating invoice...</p></div>';
+  try {
+    const out = await api('/api/checkout/btcpay', {
+      method: 'POST',
+      body: JSON.stringify({ bookId })
+    });
+
+    box.innerHTML = `<div class="panel">
+      <h3>Invoice Created</h3>
+      <p>Purchase ID: ${escapeHtml(out.purchaseId || '')}</p>
+      <p>Save this purchase access token for success/download testing:</p>
+      <div class="token">${escapeHtml(out.purchaseAccessToken || '')}</div>
+      <div class="actions">
+        <a class="btn primary" href="${out.checkoutLink}" target="_blank" rel="noopener">Open Checkout</a>
+      </div>
+    </div>`;
+  } catch (err) {
+    box.innerHTML = `<div class="panel"><p>${escapeHtml(err.message)}</p></div>`;
+  }
+}
+
+async function admin() {
+  if (!state.adminToken) {
+    $('#view').innerHTML = `<div class="page admin">
+      <div class="login-box">
+        <div class="eyebrow">Secure Admin Login</div>
+        <h1>Admin Panel</h1>
+        <p class="section-sub">Use the admin account created with npm run admin:create.</p>
+        <input class="control" id="adminEmail" type="email" placeholder="Admin email" style="width:100%;margin:8px 0" />
+        <input class="control" id="adminPass" type="password" placeholder="Admin password" style="width:100%;margin:8px 0 16px" />
+        <button class="btn primary" onclick="loginAdmin()">Login</button>
+      </div>
+    </div>`;
+    return;
+  }
+
+  $('#view').innerHTML = loading('Loading dashboard...');
+  try {
+    const [analytics, categoriesOut] = await Promise.all([
+      api('/api/admin/analytics'),
+      api('/api/categories')
+    ]);
+
+    state.categories = categoriesOut.data || [];
+
+    $('#view').innerHTML = `<div class="page admin">
+      <div class="eyebrow">Admin Dashboard</div>
+      <h1 class="page-title">Readora Control Room</h1>
+      <div class="admin-layout">
+        <aside class="admin-menu">
+          <button class="active">Dashboard</button>
+          <button onclick="logoutAdmin()">Logout</button>
+        </aside>
+        <section>
+          <div class="metrics">
+            <div class="metric"><b>${analytics.totalBooks || 0}</b><span>Total Books</span></div>
+            <div class="metric"><b>$${((analytics.revenueCents || 0)/100).toFixed(2)}</b><span>Revenue</span></div>
+            <div class="metric"><b>${analytics.sales || 0}</b><span>Sales</span></div>
+            <div class="metric"><b>${analytics.downloads || 0}</b><span>Downloads</span></div>
+          </div>
+
+          <div class="panel">
+            <h3>Add Book</h3>
+            <div class="form-grid">
+              <input class="control" id="bookTitle" placeholder="Title" />
+              <input class="control" id="bookAuthor" placeholder="Author" />
+              <input class="control" id="bookPrice" type="number" min="0" placeholder="Price in USD, example 9.99" />
+              <select class="control" id="bookCategory">
+                <option value="">No category</option>
+                ${state.categories.map(c => `<option value="${c.id}">${escapeHtml(c.name)}</option>`).join('')}
+              </select>
+              <select class="control" id="bookAccess">
+                <option value="PAID">Paid download</option>
+                <option value="FREE">Free read-only</option>
+              </select>
+              <select class="control" id="bookReaderFormat">
+                <option value="CHAPTERS">Chapters</option>
+                <option value="TXT">TXT</option>
+                <option value="HTML">HTML</option>
+                <option value="PDF">PDF</option>
+              </select>
+              <textarea class="control textarea full" id="bookDescription" placeholder="Description"></textarea>
+              <textarea class="control textarea full" id="bookReaderContent" placeholder="Optional free TXT/HTML reader content"></textarea>
+              <label class="pill"><input type="checkbox" id="bookFeatured" /> Featured</label>
+              <button class="btn primary" onclick="createBook()">Save Book</button>
+            </div>
+          </div>
+
+          <div class="panel">
+            <h3>Trending</h3>
+            <table class="table">
+              <tr><th>Book</th><th>Slug</th><th>Views</th></tr>
+              ${(analytics.trending || []).map(b => `<tr><td>${escapeHtml(b.title)}</td><td>${escapeHtml(b.slug)}</td><td>${b.views}</td></tr>`).join('')}
+            </table>
+          </div>
+        </section>
+      </div>
+    </div>`;
+  } catch (err) {
+    state.adminToken = '';
+    localStorage.removeItem('readora_admin_token');
+    $('#view').innerHTML = errorView(err);
+  }
+}
+
+async function loginAdmin() {
+  try {
+    const email = $('#adminEmail').value.trim();
+    const password = $('#adminPass').value;
+
+    const out = await api('/api/admin/login', {
+      method: 'POST',
+      body: JSON.stringify({ email, password })
+    });
+
+    state.adminToken = out.token || 'cookie';
+    localStorage.setItem('readora_admin_token', state.adminToken);
+    toast('Admin login successful');
+    render();
+  } catch (err) {
+    toast(err.message);
+  }
+}
+
+function logoutAdmin() {
+  state.adminToken = '';
+  localStorage.removeItem('readora_admin_token');
+  api('/api/admin/logout', { method: 'POST' }).catch(() => {});
+  render();
+}
+
+async function createBook() {
+  try {
+    const title = $('#bookTitle').value.trim();
+    const access = $('#bookAccess').value;
+    const price = access === 'FREE' ? 0 : Math.round(Number($('#bookPrice').value || 0) * 100);
+    const readerFormat = $('#bookReaderFormat').value;
+
+    const body = {
+      title,
+      slug: slugify(title),
+      author: $('#bookAuthor').value.trim(),
+      categoryId: $('#bookCategory').value || null,
+      description: $('#bookDescription').value.trim(),
+      previewText: $('#bookDescription').value.trim().slice(0, 500),
+      access,
+      priceCents: price,
+      readerFormat,
+      readerContent: $('#bookReaderContent').value.trim() || null,
+      allowFreeDownload: false,
+      featured: $('#bookFeatured').checked
+    };
+
+    await api('/api/admin/books', {
+      method: 'POST',
+      body: JSON.stringify(body)
+    });
+
+    toast('Book created');
+    location.hash = '#browse';
+  } catch (err) {
+    toast(err.message);
+  }
+}
+
+function simplePage(name) {
+  const key = name.toLowerCase();
+  const pages = {
+    about: ['About Readora','Readora is a premium digital bookstore for discovering ebooks, reading selected free titles online, and buying paid ebooks with secure Bitcoin checkout.'],
+    contact: ['Contact','For support, purchase help, author submissions, refunds for failed downloads, or security reports, contact support@readora.example. Replace this with your real support email.'],
+    privacy: ['Privacy Policy','Readora collects only what is needed for purchases, download security, admin audit logs, and reader progress. We do not sell personal data.'],
+    terms: ['Terms of Service','Free books are provided for online reading unless download is explicitly enabled. Paid ebook download links are one-time only and expire after first redemption or after 24 hours.']
+  };
+  const p = pages[key] || [name, 'Readora page'];
+  $('#view').innerHTML = `<div class="page browse-shell"><div class="eyebrow">Readora</div><h1 class="page-title">${p[0]}</h1><p class="lead">${p[1]}</p></div>`;
+}
+
+function parseRoute() {
+  if (location.hash) {
+    const h = location.hash.replace(/^#/, '') || 'home';
+    const [path, qs=''] = h.split('?');
+    return { path, params: Object.fromEntries(new URLSearchParams(qs)) };
+  }
+
+  const clean = location.pathname.replace(/^\/+/, '').replace(/\/+$/, '');
+  if (!clean) return { path: 'home', params: {} };
+  if (clean === 'login') return { path: 'admin', params: {} };
+  return { path: clean, params: {} };
+}
+
+function render() {
+  setWish();
+  const { path, params } = parseRoute();
+  const [route, id] = path.split('/');
+
+  $$('.nav a').forEach(a => a.classList.toggle('active', a.dataset.route === route));
+
+  if (route === 'home') return home();
+  if (route === 'browse') return browse(params);
+  if (route === 'details') return details(id);
+  if (route === 'reader') return reader(id);
+  if (route === 'checkout') return checkout(id);
+  if (route === 'wishlist') return wishlist();
+  if (route === 'admin') return admin();
+
+  return simplePage(route.charAt(0).toUpperCase() + route.slice(1).replace(/-/g, ' '));
+}
+
+$('#globalSearch').addEventListener('submit', e => {
+  e.preventDefault();
+  const q = $('#searchInput').value.trim();
+  location.hash = 'browse' + (q ? '?q=' + encodeURIComponent(q) : '');
+});
+
+const menuBtn = $('#menuBtn');
+const mobileNav = $('#mobileNav');
+if (menuBtn && mobileNav) {
+  menuBtn.onclick = () => mobileNav.classList.toggle('open');
+  mobileNav.onclick = () => mobileNav.classList.remove('open');
+}
+
+window.addEventListener('hashchange', render);
+window.addEventListener('DOMContentLoaded', render);
 </script>
 </body>
 </html>
