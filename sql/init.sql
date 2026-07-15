@@ -120,6 +120,9 @@ CREATE TABLE IF NOT EXISTS purchases (
   amount_cents int NOT NULL,
   currency char(3) NOT NULL DEFAULT 'USD',
   status purchase_status NOT NULL DEFAULT 'PENDING',
+  payment_provider text,
+  provider_payment_id text,
+  provider_checkout_url text,
   btcpay_invoice_id text UNIQUE,
   btcpay_checkout_link text,
   access_token_hash text,
@@ -205,6 +208,7 @@ CREATE INDEX IF NOT EXISTS books_popularity_idx ON books(popularity_score DESC);
 CREATE INDEX IF NOT EXISTS book_chapters_book_idx ON book_chapters(book_id, chapter_index);
 CREATE INDEX IF NOT EXISTS purchases_access_token_idx ON purchases(access_token_hash);
 CREATE INDEX IF NOT EXISTS purchases_invoice_idx ON purchases(btcpay_invoice_id);
+CREATE INDEX IF NOT EXISTS purchases_provider_payment_idx ON purchases(provider_payment_id);
 CREATE INDEX IF NOT EXISTS purchases_status_idx ON purchases(status);
 CREATE INDEX IF NOT EXISTS download_links_token_idx ON download_links(token_hash);
 CREATE INDEX IF NOT EXISTS download_links_status_expires_idx ON download_links(status, expires_at);

@@ -10,7 +10,7 @@ const schema = z.object({
     CORS_ORIGIN: z.string().default('http://localhost:3000'),
     CONFIG_AUTO_UPGRADE: z.coerce.boolean().default(true),
     BTCPAY_MODE: z.enum(['auto', 'mock', 'live', 'nowpayments']).default('auto'),
-    STORAGE_DRIVER: z.enum(['auto', 'local', 's3', 'r2']).default('auto'),
+    STORAGE_DRIVER: z.enum(['auto', 'local', 's3', 'r2', 'b2']).default('auto'),
     LOCAL_STORAGE_DIR: z.string().default('./storage'),
     BTCPAY_URL: z.string().url().optional(),
     BTCPAY_API_KEY: z.string().optional(),
@@ -24,6 +24,11 @@ const schema = z.object({
     R2_SECRET_ACCESS_KEY: z.string().optional(),
     R2_BUCKET: z.string().optional(),
     R2_REGION: z.string().default('auto'),
+    B2_ENDPOINT: z.string().optional(),
+    B2_KEY_ID: z.string().optional(),
+    B2_APPLICATION_KEY: z.string().optional(),
+    B2_BUCKET: z.string().optional(),
+    B2_REGION: z.string().optional(),
     SIGNED_URL_SECONDS: z.coerce.number().default(300),
     DOWNLOAD_TOKEN_HOURS: z.coerce.number().default(24),
     LOGIN_RATE_LIMIT_WINDOW_MIN: z.coerce.number().default(15),
@@ -41,6 +46,10 @@ const hasR2Config = Boolean(parsed.R2_ENDPOINT &&
     parsed.R2_ACCESS_KEY_ID &&
     parsed.R2_SECRET_ACCESS_KEY &&
     parsed.R2_BUCKET);
+const hasB2Config = Boolean(parsed.B2_ENDPOINT &&
+    parsed.B2_KEY_ID &&
+    parsed.B2_APPLICATION_KEY &&
+    parsed.B2_BUCKET);
 const useNowPayments = parsed.BTCPAY_MODE === 'nowpayments' ||
     (parsed.BTCPAY_MODE === 'auto' && hasNowPaymentsConfig);
 const useMockBtcpay = parsed.BTCPAY_MODE === 'mock'
@@ -51,9 +60,9 @@ const useMockBtcpay = parsed.BTCPAY_MODE === 'mock'
             ? false
             : !hasBtcpayConfig && !useNowPayments;
 const activeStorageDriver = parsed.STORAGE_DRIVER === 'auto'
-    ? (hasR2Config ? 's3' : 'local')
-    : parsed.STORAGE_DRIVER === 'local' && parsed.CONFIG_AUTO_UPGRADE && hasR2Config
-        ? 's3'
+    ? (hasR2Config ? 's3' : hasB2Config ? 'b2' : 'local')
+    : parsed.STORAGE_DRIVER === 'local' && parsed.CONFIG_AUTO_UPGRADE && (hasR2Config || hasB2Config)
+        ? (hasR2Config ? 's3' : 'b2')
         : parsed.STORAGE_DRIVER;
 export const env = {
     ...parsed,
@@ -62,6 +71,7 @@ export const env = {
     HAS_BTCPAY_CONFIG: hasBtcpayConfig,
     HAS_NOWPAYMENTS_CONFIG: hasNowPaymentsConfig,
     HAS_R2_CONFIG: hasR2Config,
+    HAS_B2_CONFIG: hasB2Config,
     USE_NOWPAYMENTS: useNowPayments,
     USE_MOCK_BTCPAY: useMockBtcpay
 };

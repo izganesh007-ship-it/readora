@@ -38,7 +38,7 @@ function sortObject(value: any): any {
 }
 
 export function verifyNowPaymentsSignature(body: unknown, signature?: string | string[]) {
-  if (!env.NOWPAYMENTS_IPN_SECRET) return true;
+  if (!env.NOWPAYMENTS_IPN_SECRET) return false;
 
   const sig = Array.isArray(signature) ? signature[0] : signature;
   if (!sig) return false;

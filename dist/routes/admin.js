@@ -1,40 +1,12 @@
 import { Router } from 'express';
 import argon2 from 'argon2';
-import crypto from 'node:crypto';
-import path from 'node:path';
-import fs from 'node:fs/promises';
-import multer from 'multer';
-import { PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
 import { z } from 'zod';
 import { query } from '../db.js';
 import { loginLimiter } from '../middleware/security.js';
 import { requireAdmin, signAdminSession } from '../middleware/auth.js';
 import { audit } from '../services/audit.js';
-import { env, isProd } from '../config/env.js';
-import { localPathForKey } from '../services/storage.js';
+import { isProd } from '../config/env.js';
 export const adminRouter = Router();
-const upload = multer({
-    storage: multer.memoryStorage(),
-    limits: { fileSize: 150 * 1024 * 1024 }
-});
-const s3 = new S3Client({
-    region: env.R2_REGION,
-    endpoint: env.R2_ENDPOINT,
-    forcePathStyle: true,
-    credentials: env.R2_ACCESS_KEY_ID && env.R2_SECRET_ACCESS_KEY ? {
-        accessKeyId: env.R2_ACCESS_KEY_ID,
-        secretAccessKey: env.R2_SECRET_ACCESS_KEY
-    } : undefined
-});
-function safeFileName(name) {
-    return name.toLowerCase().replace(/[^a-z0-9._-]+/g, '-').replace(/^-+|-+$/g, '') || 'file';
-}
-function buildFileKey(kind, originalName) {
-    const safe = safeFileName(originalName);
-    const ext = path.extname(safe);
-    const prefix = kind === 'cover' ? 'cover' : 'ebook';
-    return `books/${prefix}-${Date.now()}-${crypto.randomBytes(8).toString('hex')}${ext}`;
-}
 adminRouter.post('/login', loginLimiter, async (req, res, next) => {
     try {
         const body = z.object({
@@ -79,60 +51,6 @@ adminRouter.post('/login', loginLimiter, async (req, res, next) => {
 adminRouter.post('/logout', (_req, res) => {
     res.clearCookie('admin_session');
     res.json({ ok: true });
-});
-adminRouter.post('/uploads', requireAdmin(['OWNER', 'ADMIN', 'EDITOR']), upload.single('file'), async (req, res, next) => {
-    try {
-        const file = req.file;
-        if (!file)
-            return res.status(400).json({ error: 'No file uploaded. Use multipart field name: file' });
-        const body = z.object({
-            kind: z.enum(['cover', 'ebook']).default('ebook')
-        }).parse(req.body);
-        if (body.kind === 'cover' && !file.mimetype.startsWith('image/')) {
-            return res.status(400).json({ error: 'Cover upload must be an image' });
-        }
-        if (body.kind === 'ebook' && !/\.(pdf|epub)$/i.test(file.originalname)) {
-            return res.status(400).json({ error: 'Ebook upload must be .pdf or .epub' });
-        }
-        const key = buildFileKey(body.kind, file.originalname);
-        if (env.STORAGE_DRIVER === 'local') {
-            const full = localPathForKey(key);
-            await fs.mkdir(path.dirname(full), { recursive: true });
-            await fs.writeFile(full, file.buffer);
-        }
-        else {
-            if (!env.R2_BUCKET)
-                return res.status(500).json({ error: 'R2_BUCKET is not configured' });
-            await s3.send(new PutObjectCommand({
-                Bucket: env.R2_BUCKET,
-                Key: key,
-                Body: file.buffer,
-                ContentType: file.mimetype || 'application/octet-stream'
-            }));
-        }
-        await audit('ADMIN_FILE_UPLOADED', {
-            adminId: req.admin?.adminId,
-            entityType: body.kind,
-            entityId: key,
-            ip: req.ip,
-            metadata: {
-                originalName: file.originalname,
-                mimetype: file.mimetype,
-                size: file.size,
-                storageDriver: env.STORAGE_DRIVER
-            }
-        });
-        res.status(201).json({
-            key,
-            kind: body.kind,
-            originalName: file.originalname,
-            contentType: file.mimetype,
-            size: file.size
-        });
-    }
-    catch (err) {
-        next(err);
-    }
 });
 adminRouter.get('/analytics', requireAdmin(['OWNER', 'ADMIN', 'EDITOR']), async (_req, res, next) => {
     try {

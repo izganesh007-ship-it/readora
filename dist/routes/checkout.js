@@ -28,6 +28,7 @@ async function createPurchase(bookId, buyerEmail) {
         purchaseAccessToken
     };
 }
+// NOWPayments checkout endpoint
 checkoutRouter.post('/nowpayments', async (req, res, next) => {
     try {
         const body = z.object({
@@ -37,8 +38,8 @@ checkoutRouter.post('/nowpayments', async (req, res, next) => {
         const created = await createPurchase(body.bookId, body.buyerEmail);
         if ('error' in created)
             return res.status(created.errorStatus).json({ error: created.error });
-        const payment = await createNowPayment(created.purchase.id, created.book.price_cents, (created.book.currency || 'USD').toLowerCase(), `Readora ebook: ${created.book.title}`);
-        await query('UPDATE purchases SET btcpay_invoice_id=$1, btcpay_checkout_link=$2 WHERE id=$3', [payment.paymentId, payment.paymentUrl, created.purchase.id]);
+        const payment = await createNowPayment(created.purchase.id, created.book.price_cents ?? 0, (created.book.currency ?? 'USD').toLowerCase(), `Readora ebook: ${created.book.title}`);
+        await query('UPDATE purchases SET payment_provider=$1, provider_payment_id=$2, provider_checkout_url=$3 WHERE id=$4', ['nowpayments', payment.paymentId, payment.paymentUrl, created.purchase.id]);
         res.status(201).json({
             provider: 'nowpayments',
             purchaseId: created.purchase.id,
@@ -53,6 +54,7 @@ checkoutRouter.post('/nowpayments', async (req, res, next) => {
         next(err);
     }
 });
+// BTCPay checkout endpoint
 checkoutRouter.post('/btcpay', async (req, res, next) => {
     try {
         const body = z.object({
@@ -60,33 +62,20 @@ checkoutRouter.post('/btcpay', async (req, res, next) => {
             buyerEmail: z.string().email().optional()
         }).parse(req.body);
         if (env.USE_NOWPAYMENTS) {
-            const created = await createPurchase(body.bookId, body.buyerEmail);
-            if ('error' in created)
-                return res.status(created.errorStatus).json({ error: created.error });
-            const payment = await createNowPayment(created.purchase.id, created.book.price_cents, (created.book.currency || 'USD').toLowerCase(), `Readora ebook: ${created.book.title}`);
-            await query('UPDATE purchases SET btcpay_invoice_id=$1, btcpay_checkout_link=$2 WHERE id=$3', [payment.paymentId, payment.paymentUrl, created.purchase.id]);
-            return res.status(201).json({
-                provider: 'nowpayments',
-                purchaseId: created.purchase.id,
-                purchaseAccessToken: created.purchaseAccessToken,
-                paymentId: payment.paymentId,
-                checkoutLink: payment.paymentUrl,
-                paymentUrl: payment.paymentUrl,
-                payAddress: payment.payAddress
-            });
+            return res.status(400).json({ error: 'NOWPayments is configured, use /api/checkout/nowpayments endpoint' });
         }
         const created = await createPurchase(body.bookId, body.buyerEmail);
         if ('error' in created)
             return res.status(created.errorStatus).json({ error: created.error });
-        const amount = created.book.price_cents / 100;
+        const amount = (created.book.price_cents ?? 0) / 100;
         const invoice = await createInvoice({
             amount,
-            currency: created.book.currency || env.BTCPAY_CURRENCY,
+            currency: created.book.currency ?? env.BTCPAY_CURRENCY,
             orderId: created.purchase.id,
             buyerEmail: body.buyerEmail,
             redirectUrl: `${env.APP_URL}/purchase-success?purchase=${created.purchase.id}`
         });
-        await query('UPDATE purchases SET btcpay_invoice_id=$1, btcpay_checkout_link=$2 WHERE id=$3', [invoice.id, invoice.checkoutLink, created.purchase.id]);
+        await query('UPDATE purchases SET payment_provider=$1, provider_payment_id=$2, provider_checkout_url=$3 WHERE id=$4', ['btcpay', invoice.id, invoice.checkoutLink, created.purchase.id]);
         res.status(201).json({
             provider: env.USE_MOCK_BTCPAY ? 'mock' : 'btcpay',
             purchaseId: created.purchase.id,

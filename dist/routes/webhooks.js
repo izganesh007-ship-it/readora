@@ -7,9 +7,20 @@ import { audit } from '../services/audit.js';
 export const webhooksRouter = Router();
 async function markPurchasePaid(input) {
     await tx(async (client) => {
-        const p = input.purchaseId
-            ? await client.query('SELECT * FROM purchases WHERE id=$1 FOR UPDATE', [input.purchaseId])
-            : await client.query('SELECT * FROM purchases WHERE btcpay_invoice_id=$1 FOR UPDATE', [input.providerPaymentId]);
+        let p;
+        if (input.purchaseId) {
+            p = await client.query('SELECT * FROM purchases WHERE id=$1 FOR UPDATE', [input.purchaseId]);
+        }
+        else if (input.providerPaymentId) {
+            // Try provider_payment_id first (for NOWPayments), then btcpay_invoice_id (for BTCPay)
+            p = await client.query('SELECT * FROM purchases WHERE provider_payment_id=$1 FOR UPDATE', [input.providerPaymentId]);
+            if (!p.rowCount) {
+                p = await client.query('SELECT * FROM purchases WHERE btcpay_invoice_id=$1 FOR UPDATE', [input.providerPaymentId]);
+            }
+        }
+        else {
+            return;
+        }
         if (!p.rowCount)
             return;
         const purchase = p.rows[0];
