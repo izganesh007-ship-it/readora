@@ -1,5 +1,5 @@
-# Force full rebuild - 2026-07-16-06
-ARG CACHEBUST=5
+# Force rebuild 2026-07-16-07
+ARG CACHEBUST=6
 
 FROM node:22-alpine AS deps
 WORKDIR /app
