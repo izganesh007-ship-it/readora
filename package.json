@@ -8,7 +8,7 @@
         "dev": "tsx watch src/server.ts",
         "start": "node dist/server.js",
         "build": "tsc -p tsconfig.json && node scripts/copy-public.cjs",
-        "db:migrate": "psql $DATABASE_URL -f sql/init.sql",
+        "db:migrate": "node scripts/migrate.mjs",
         "db:seed": "psql $DATABASE_URL -f sql/seed.sql",
         "admin:create": "tsx src/scripts/createAdmin.ts",
         "db:studio": "prisma studio",
