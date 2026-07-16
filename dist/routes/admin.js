@@ -6,7 +6,10 @@ import { loginLimiter } from '../middleware/security.js';
 import { requireAdmin, signAdminSession } from '../middleware/auth.js';
 import { audit } from '../services/audit.js';
 import { isProd } from '../config/env.js';
+import multer from 'multer';
+import { saveLocalObject } from '../services/storage.js';
 export const adminRouter = Router();
+const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 200 * 1024 * 1024 } });
 adminRouter.post('/login', loginLimiter, async (req, res, next) => {
     try {
         const body = z.object({
@@ -133,6 +136,170 @@ adminRouter.post('/books', requireAdmin(['OWNER', 'ADMIN', 'EDITOR']), async (re
             ip: req.ip
         });
         res.status(201).json({ data: out.rows[0] });
+    }
+    catch (err) {
+        next(err);
+    }
+});
+adminRouter.get('/books', requireAdmin(['OWNER', 'ADMIN', 'EDITOR']), async (req, res, next) => {
+    try {
+        const out = await query(`
+      SELECT b.*, c.name AS category_name, c.slug AS category_slug
+      FROM books b
+      LEFT JOIN categories c ON c.id = b.category_id
+      ORDER BY b.created_at DESC
+    `);
+        res.json({ data: out.rows });
+    }
+    catch (err) {
+        next(err);
+    }
+});
+adminRouter.get('/books/:id', requireAdmin(['OWNER', 'ADMIN', 'EDITOR']), async (req, res, next) => {
+    try {
+        const out = await query(`
+      SELECT b.*, c.name AS category_name, c.slug AS category_slug
+      FROM books b
+      LEFT JOIN categories c ON c.id = b.category_id
+      WHERE b.id = $1
+    `, [req.params.id]);
+        if (!out.rowCount)
+            return res.status(404).json({ error: 'Book not found' });
+        res.json({ data: out.rows[0] });
+    }
+    catch (err) {
+        next(err);
+    }
+});
+adminRouter.put('/books/:id', requireAdmin(['OWNER', 'ADMIN', 'EDITOR']), async (req, res, next) => {
+    try {
+        const body = z.object({
+            title: z.string().min(1).optional(),
+            slug: z.string().min(1).optional(),
+            author: z.string().min(1).optional(),
+            categoryId: z.string().uuid().optional().nullable(),
+            description: z.string().min(1).optional(),
+            previewText: z.string().optional().nullable(),
+            access: z.enum(['FREE', 'PAID']).optional(),
+            priceCents: z.number().int().min(0).optional(),
+            coverKey: z.string().optional().nullable(),
+            epubKey: z.string().optional().nullable(),
+            pdfKey: z.string().optional().nullable(),
+            readerFormat: z.enum(['CHAPTERS', 'TXT', 'HTML', 'PDF']).optional(),
+            readerContent: z.string().optional().nullable(),
+            readerContentKey: z.string().optional().nullable(),
+            allowFreeDownload: z.boolean().optional(),
+            featured: z.boolean().optional(),
+            isActive: z.boolean().optional()
+        }).parse(req.body);
+        const fields = [];
+        const params = [req.params.id];
+        let idx = 2;
+        for (const [key, value] of Object.entries(body)) {
+            if (value === undefined)
+                continue;
+            const col = key.replace(/([A-Z])/g, '_$1').toLowerCase();
+            fields.push(`${col} = $${idx++}`);
+            params.push(value);
+        }
+        fields.push(`updated_at = now()`);
+        const out = await query(`UPDATE books SET ${fields.join(', ')} WHERE id = $1 RETURNING *`, params);
+        if (!out.rowCount)
+            return res.status(404).json({ error: 'Book not found' });
+        await audit('BOOK_UPDATED', { adminId: req.admin?.adminId ?? '', entityType: 'book', entityId: req.params.id, ip: req.ip });
+        res.json({ data: out.rows[0] });
+    }
+    catch (err) {
+        next(err);
+    }
+});
+adminRouter.delete('/books/:id', requireAdmin(['OWNER', 'ADMIN']), async (req, res, next) => {
+    try {
+        const out = await query('DELETE FROM books WHERE id = $1 RETURNING id', [req.params.id]);
+        if (!out.rowCount)
+            return res.status(404).json({ error: 'Book not found' });
+        await audit('BOOK_DELETED', { adminId: req.admin?.adminId ?? '', entityType: 'book', entityId: req.params.id, ip: req.ip });
+        res.json({ ok: true });
+    }
+    catch (err) {
+        next(err);
+    }
+});
+adminRouter.post('/categories', requireAdmin(['OWNER', 'ADMIN', 'EDITOR']), async (req, res, next) => {
+    try {
+        const body = z.object({
+            name: z.string().min(1),
+            slug: z.string().min(1),
+            description: z.string().optional().nullable(),
+            coverUrl: z.string().url().optional().nullable(),
+            sortOrder: z.number().int().default(0),
+            isActive: z.boolean().default(true)
+        }).parse(req.body);
+        const out = await query(`INSERT INTO categories(name,slug,description,cover_url,sort_order,is_active) VALUES($1,$2,$3,$4,$5,$6) RETURNING *`, [body.name, body.slug, body.description || null, body.coverUrl || null, body.sortOrder || 0, body.isActive !== false]);
+        res.status(201).json({ data: out.rows[0] });
+    }
+    catch (err) {
+        next(err);
+    }
+});
+adminRouter.get('/categories', requireAdmin(['OWNER', 'ADMIN', 'EDITOR']), async (req, res, next) => {
+    try {
+        const out = await query('SELECT * FROM categories ORDER BY sort_order, name');
+        res.json({ data: out.rows });
+    }
+    catch (err) {
+        next(err);
+    }
+});
+adminRouter.put('/categories/:id', requireAdmin(['OWNER', 'ADMIN', 'EDITOR']), async (req, res, next) => {
+    try {
+        const body = z.object({
+            name: z.string().min(1).optional(),
+            slug: z.string().min(1).optional(),
+            description: z.string().optional().nullable(),
+            coverUrl: z.string().url().optional().nullable(),
+            sortOrder: z.number().int().optional(),
+            isActive: z.boolean().optional()
+        }).parse(req.body);
+        const fields = [];
+        const params = [req.params.id];
+        let idx = 2;
+        for (const [key, value] of Object.entries(body)) {
+            if (value === undefined)
+                continue;
+            const col = key.replace(/([A-Z])/g, '_$1').toLowerCase();
+            fields.push(`${col} = $${idx++}`);
+            params.push(value);
+        }
+        const out = await query(`UPDATE categories SET ${fields.join(', ')} WHERE id = $1 RETURNING *`, params);
+        if (!out.rowCount)
+            return res.status(404).json({ error: 'Category not found' });
+        res.json({ data: out.rows[0] });
+    }
+    catch (err) {
+        next(err);
+    }
+});
+adminRouter.delete('/categories/:id', requireAdmin(['OWNER', 'ADMIN']), async (req, res, next) => {
+    try {
+        const out = await query('DELETE FROM categories WHERE id = $1 RETURNING id', [req.params.id]);
+        if (!out.rowCount)
+            return res.status(404).json({ error: 'Category not found' });
+        res.json({ ok: true });
+    }
+    catch (err) {
+        next(err);
+    }
+});
+adminRouter.post('/uploads/local', upload.single('file'), requireAdmin(['OWNER', 'ADMIN', 'EDITOR']), async (req, res, next) => {
+    try {
+        if (!req.file)
+            return res.status(400).json({ error: 'No file uploaded' });
+        const kind = req.body.kind || 'cover';
+        const key = `uploads/${kind}/${Date.now()}-${req.file.originalname.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
+        await saveLocalObject(key, req.file.buffer);
+        await audit('LOCAL_FILE_UPLOADED', { adminId: req.admin?.adminId, ip: req.ip, metadata: { key, kind, bytes: req.file.size } });
+        res.status(201).json({ key, bytes: req.file.size });
     }
     catch (err) {
         next(err);

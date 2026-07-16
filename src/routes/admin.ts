@@ -236,7 +236,7 @@ adminRouter.put('/books/:id', requireAdmin(['OWNER', 'ADMIN', 'EDITOR']), async 
     );
     if (!out.rowCount) return res.status(404).json({ error: 'Book not found' });
 
-    await audit('BOOK_UPDATED', { adminId: req.admin?.adminId as string, entityType: 'book', entityId: req.params.id, ip: req.ip });
+    await audit('BOOK_UPDATED', { adminId: (req.admin?.adminId as string) ?? '', entityType: 'book', entityId: req.params.id as string, ip: req.ip });
     res.json({ data: out.rows[0] });
   } catch (err) { next(err); }
 });
@@ -245,7 +245,7 @@ adminRouter.delete('/books/:id', requireAdmin(['OWNER', 'ADMIN']), async (req, r
   try {
     const out = await query('DELETE FROM books WHERE id = $1 RETURNING id', [req.params.id]);
     if (!out.rowCount) return res.status(404).json({ error: 'Book not found' });
-    await audit('BOOK_DELETED', { adminId: req.admin?.adminId as string, entityType: 'book', entityId: req.params.id, ip: req.ip });
+    await audit('BOOK_DELETED', { adminId: (req.admin?.adminId as string) ?? '', entityType: 'book', entityId: req.params.id as string, ip: req.ip });
     res.json({ ok: true });
   } catch (err) { next(err); }
 });
