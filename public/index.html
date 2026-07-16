@@ -659,8 +659,12 @@
                   <option value="HTML">HTML</option>
                   <option value="PDF">PDF</option>
                 </select>
-                <input class="control full" id="coverFile" name="coverFile" type="file" accept="image/*" />
-                <input class="control full" id="ebookFile" name="ebookFile" type="file" accept=".pdf,.epub" />
+                <label class="control full" style="display:flex;flex-direction:column;gap:6px;font-weight:700">
+                  Cover Image <input id="coverFile" name="coverFile" type="file" accept="image/*" />
+                </label>
+                <label class="control full" style="display:flex;flex-direction:column;gap:6px;font-weight:700">
+                  Ebook File (PDF/EPUB) <input id="ebookFile" name="ebookFile" type="file" accept=".pdf,.epub" />
+                </label>
                 <textarea class="control textarea full" id="bookDescription" name="description" placeholder="Description" required></textarea>
                 <textarea class="control textarea full" id="bookReaderContent" name="readerContent" placeholder="Optional free TXT/HTML reader content"></textarea>
                 <label class="pill"><input type="checkbox" id="bookFeatured" name="featured" /> Featured</label>
