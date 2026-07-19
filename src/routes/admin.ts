@@ -5,13 +5,9 @@ import { query } from '../db.js';
 import { loginLimiter } from '../middleware/security.js';
 import { requireAdmin, signAdminSession } from '../middleware/auth.js';
 import { audit } from '../services/audit.js';
-import { env, isProd } from '../config/env.js';
-import multer from 'multer';
-import { signedUploadTarget, saveLocalObject } from '../services/storage.js';
+import { isProd } from '../config/env.js';
 
 export const adminRouter = Router();
-
-const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 200 * 1024 * 1024 } });
 
 adminRouter.post('/login', loginLimiter, async (req, res, next) => {
   try {
@@ -307,16 +303,5 @@ adminRouter.delete('/categories/:id', requireAdmin(['OWNER', 'ADMIN']), async (r
     const out = await query('DELETE FROM categories WHERE id = $1 RETURNING id', [req.params.id]);
     if (!out.rowCount) return res.status(404).json({ error: 'Category not found' });
     res.json({ ok: true });
-  } catch (err) { next(err); }
-});
-
-adminRouter.post('/uploads/local', upload.single('file'), requireAdmin(['OWNER', 'ADMIN', 'EDITOR']), async (req, res, next) => {
-  try {
-    if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
-    const kind = req.body.kind || 'cover';
-    const key = `uploads/${kind}/${Date.now()}-${req.file.originalname.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
-    await saveLocalObject(key, req.file.buffer);
-    await audit('LOCAL_FILE_UPLOADED', { adminId: req.admin?.adminId, ip: req.ip, metadata: { key, kind, bytes: req.file.size } });
-    res.status(201).json({ key, bytes: req.file.size });
   } catch (err) { next(err); }
 });
