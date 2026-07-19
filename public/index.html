@@ -40,7 +40,7 @@
       <a href="#home" data-route="home">Home</a>
       <a href="#browse" data-route="browse">Browse</a>
       <a href="#wishlist" data-route="wishlist">Wishlist</a>
-      <a href="#admin" data-route="admin">Admin</a>
+      <a href="#admin" data-route="admin" id="navAdminLink" style="display:none">Admin</a>
     </nav>
     <form class="search" id="globalSearch">
       <input id="searchInput" placeholder="Search books, authors, tags..." autocomplete="off" />
@@ -224,6 +224,11 @@
   }
 
   function cover(book, cls = 'book-cover') {
+    if (book.coverKey) {
+      return `<div class="${cls}" style="background:var(--bg2);overflow:hidden;position:relative">
+        <img src="/api/files/cover?key=${encodeURIComponent(book.coverKey)}" alt="${escapeHtml(book.title)}" style="width:100%;height:100%;object-fit:cover;border-radius:inherit" onerror="this.parentElement.style.background='${gradientFor(book)}';this.remove()" />
+      </div>`;
+    }
     return `<div class="${cls}" style="--cover-gradient:${gradientFor(book)};background:${gradientFor(book)}">
       <div class="cover-mark">READORA</div>
       <div class="mini-title">${escapeHtml(book.title)}</div>
@@ -239,7 +244,7 @@
       ${cover(book)}
       <div class="card-body">
         <div class="card-title">${escapeHtml(book.title)}</div>
-        <div class="card-meta"><span>${escapeHtml(book.author || '')}</span><span class="rating">â˜… ${Number(book.rating || 0)}</span></div>
+        <div class="card-meta"><span>${escapeHtml(book.author || '')}</span>${Number(book.rating) > 0 ? `<span class="rating">â˜… ${Number(book.rating)}</span>` : ''}</div>
         <div class="card-meta" style="margin-top:5px"><span>${escapeHtml(book.category || '')}</span><b>${money(book.priceCents)}</b></div>
       </div>
     </article>`;
@@ -292,7 +297,7 @@
               <span class="pill red">${hero.free ? 'Free to read' : 'Premium paid ebook'}</span>
               <span class="pill">${escapeHtml(hero.author || '')}</span>
               <span class="pill">${escapeHtml(hero.category || '')}</span>
-              <span class="pill rating">â˜… ${Number(hero.rating || 0)}</span>
+              ${Number(hero.rating) > 0 ? `<span class="pill rating">â˜… ${Number(hero.rating)}</span>` : ''}
               <span class="pill">${money(hero.priceCents)}</span>
             </div>
             <div class="actions">
@@ -378,7 +383,7 @@
               <span class="pill red">${book.free ? 'Free / Read Online' : 'Paid / Purchase Required'}</span>
               <span class="pill">Author: ${escapeHtml(book.author || '')}</span>
               <span class="pill">${escapeHtml(book.category || '')}</span>
-              <span class="pill rating">â˜… ${Number(book.rating || 0)}</span>
+              ${Number(book.rating) > 0 ? `<span class="pill rating">â˜… ${Number(book.rating)}</span>` : ''}
               <span class="pill">${money(book.priceCents)}</span>
             </div>
             <p class="detail-desc">${escapeHtml(book.description || '')}</p>
@@ -433,15 +438,36 @@
     }
   }
 
-  function renderWishlist() {
-    $('#view').innerHTML = `<div class="page browse-shell">
-      <div class="eyebrow">Wishlist</div>
-      <h1 class="page-title">Your Wishlist</h1>
-      <p class="lead">Stored locally in your browser.</p>
-      <div class="panel">
-        ${state.wishlist.length ? state.wishlist.map(slug => `<p><a href="#details/${escapeHtml(slug)}">${escapeHtml(slug)}</a></p>`).join('') : '<p>Your wishlist is empty.</p>'}
-      </div>
-    </div>`;
+  async function renderWishlist() {
+    const slugs = state.wishlist;
+    if (!slugs.length) {
+      $('#view').innerHTML = `<div class="page browse-shell">
+        <div class="eyebrow">Wishlist</div>
+        <h1 class="page-title">Your Wishlist</h1>
+        <div class="panel"><p>Your wishlist is empty. Browse books and add them by clicking the heart icon.</p>
+        <div class="actions" style="margin-top:12px"><a class="btn primary" href="#browse">Browse Books</a></div></div>
+      </div>`;
+      return;
+    }
+    $('#view').innerHTML = loading('Loading wishlist...');
+    try {
+      // Fetch each book by slug to show full details
+      const books = (await Promise.all(slugs.map(slug =>
+        api('/api/books/' + encodeURIComponent(slug)).catch(() => null)
+      ))).filter(Boolean).map(r => normalizeBook(r.data));
+
+      $('#view').innerHTML = `<div class="page browse-shell">
+        <div class="eyebrow">Wishlist</div>
+        <h1 class="page-title">Your Wishlist <span class="pill" style="font-size:16px;vertical-align:middle">${books.length}</span></h1>
+        <div class="actions" style="margin-bottom:16px">
+          <a class="btn ghost small" href="#browse">Browse Books</a>
+          <button class="btn ghost small" type="button" onclick="if(confirm('Clear all?')){localStorage.removeItem('readora_wishlist');state.wishlist=[];render()}">Clear All</button>
+        </div>
+        <div class="grid">${books.map(card).join('') || '<div class="empty">Some books may have been removed.</div>'}</div>
+      </div>`;
+    } catch (err) {
+      $('#view').innerHTML = errorView(err);
+    }
   }
 
   async function renderCheckout(slug) {
@@ -449,6 +475,12 @@
     try {
       const out = await api('/api/books/' + encodeURIComponent(slug));
       const book = normalizeBook(out.data);
+
+      // Redirect free books to reader
+      if (book.free) {
+        location.hash = '#reader/' + slug;
+        return;
+      }
 
       $('#view').innerHTML = `<div class="page checkout">
         <div class="eyebrow">Crypto Checkout</div>
@@ -816,6 +848,10 @@
     const { path, params } = parseRoute();
     const [route, id] = path.split('/');
 
+    // Show admin nav link only when logged in
+    const adminLink = $('#navAdminLink');
+    if (adminLink) adminLink.style.display = state.adminToken ? '' : 'none';
+
     $$('.nav a').forEach(a => a.classList.toggle('active', a.dataset.route === route));
 
     if (route === 'home') return renderHome();
@@ -823,7 +859,7 @@
     if (route === 'details') return renderDetails(id);
     if (route === 'reader') return renderReader(id);
     if (route === 'checkout') return renderCheckout(id);
-    if (route === 'wishlist') return renderWishlist();
+    if (route === 'wishlist') { renderWishlist(); return; }
     if (route === 'admin') return renderAdmin();
 
     return renderSimplePage(route.charAt(0).toUpperCase() + route.slice(1).replace(/-/g, ' '));
