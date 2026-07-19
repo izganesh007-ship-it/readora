@@ -634,6 +634,8 @@
     }
   }
 
+  let adminTab = 'dashboard';
+
   async function renderAdmin() {
     if (!state.adminToken) {
       $('#view').innerHTML = `<div class="page admin">
@@ -655,9 +657,10 @@
     $('#view').innerHTML = loading('Loading dashboard...');
 
     try {
-      const [analytics, categoriesOut] = await Promise.all([
+      const [analytics, categoriesOut, booksOut] = await Promise.all([
         api('/api/admin/analytics'),
-        api('/api/categories')
+        api('/api/categories'),
+        adminTab !== 'categories' ? api('/api/admin/books').catch(() => ({data: []})) : Promise.resolve({data: []})
       ]);
 
       state.categories = categoriesOut.data || [];
@@ -667,10 +670,13 @@
         <h1 class="page-title">Readora Control Room</h1>
         <div class="admin-layout">
           <aside class="admin-menu">
-            <button class="active" type="button">Dashboard</button>
+            <button class="${adminTab === 'dashboard' ? 'active' : ''}" type="button" data-action="admin-tab" data-tab="dashboard">Dashboard</button>
+            <button class="${adminTab === 'books' ? 'active' : ''}" type="button" data-action="admin-tab" data-tab="books">Books</button>
+            <button class="${adminTab === 'categories' ? 'active' : ''}" type="button" data-action="admin-tab" data-tab="categories">Categories</button>
             <button type="button" data-action="logout-admin">Logout</button>
           </aside>
           <section>
+            ${adminTab === 'dashboard' ? `
             <div class="metrics">
               <div class="metric"><b>${analytics.totalBooks || 0}</b><span>Total Books</span></div>
               <div class="metric"><b>$${((analytics.revenueCents || 0) / 100).toFixed(2)}</b><span>Revenue</span></div>
@@ -710,7 +716,7 @@
                 <button class="btn primary" type="submit">Save Book</button>
               </form>
               <div id="addBookDebug" class="section-sub" style="margin-top:12px"></div>
-            </div>
+            </div>` : adminTab === 'books' ? adminBooksList(booksOut.data || []) : adminCategoriesView()}
           </section>
         </div>
       </div>`;
@@ -805,6 +811,73 @@
       if (debug) debug.textContent = 'Book created.';
       toast('Book created');
       location.hash = '#browse';
+    } catch (err) {
+      if (debug) debug.textContent = err.message;
+      toast(err.message);
+    }
+  }
+
+  // Admin tab content helpers
+  function adminBooksList(books) {
+    if (!books.length) return '<div class="panel"><p>No books yet. Add one on the Dashboard tab.</p></div>';
+    return `<div class="panel"><h3>All Books (${books.length})</h3>
+      <div style="overflow-x:auto"><table class="table">
+      <thead><tr><th>Title</th><th>Author</th><th>Access</th><th>Price</th><th>Actions</th></tr></thead>
+      <tbody>${books.map(b => `<tr>
+        <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"><a href="#details/${escapeHtml(b.slug)}" style="color:var(--blue)">${escapeHtml(b.title)}</a></td>
+        <td>${escapeHtml(b.author || '')}</td>
+        <td><span class="${b.access === 'FREE' ? 'free' : 'paid'}">${b.access}</span></td>
+        <td>${money(b.price_cents)}</td>
+        <td><button class="btn small ghost" type="button" style="color:var(--red)" data-action="delete-book" data-id="${b.id}" data-title="${escapeHtml(b.title)}">Delete</button></td>
+      </tr>`).join('')}</tbody></table></div></div>`;
+  }
+
+  function adminCategoriesView() {
+    const rows = state.categories.map(c => `<tr>
+      <td>${escapeHtml(c.name)}</td>
+      <td>${escapeHtml(c.slug)}</td>
+      <td>${c.book_count || 0}</td>
+      <td>${(c.book_count || 0) === 0 ? `<button class="btn small ghost" type="button" style="color:var(--red)" data-action="delete-category" data-id="${c.id}" data-name="${escapeHtml(c.name)}">Delete</button>` : '<span style="color:var(--muted)">Has books</span>'}</td>
+    </tr>`).join('');
+
+    return `<div class="panel"><h3>Add Category</h3>
+      <form id="addCategoryForm" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px">
+        <input class="control" name="name" placeholder="Name" required style="flex:1;min-width:140px" />
+        <input class="control" name="slug" placeholder="slug" required style="flex:1;min-width:120px" />
+        <button class="btn primary" type="submit">Add</button>
+      </form>
+      <div id="addCategoryDebug" class="section-sub" style="margin-bottom:8px"></div>
+      <h3>Existing (${state.categories.length})</h3>
+      <div style="overflow-x:auto"><table class="table">
+      <thead><tr><th>Name</th><th>Slug</th><th>Books</th><th></th></tr></thead>
+      <tbody>${rows || '<tr><td colspan="4">No categories yet.</td></tr>'}</tbody></table></div></div>`;
+  }
+
+  async function deleteBook(bookId) {
+    try {
+      await api('/api/admin/books/' + bookId, { method: 'DELETE' });
+      toast('Book deleted');
+      render();
+    } catch (err) { toast(err.message); }
+  }
+
+  async function deleteCategory(catId) {
+    try {
+      await api('/api/admin/categories/' + catId, { method: 'DELETE' });
+      toast('Category deleted');
+      render();
+    } catch (err) { toast(err.message); }
+  }
+
+  async function addCategory(form) {
+    const debug = $('#addCategoryDebug');
+    try {
+      const name = form.name.value.trim();
+      const slug = form.slug.value.trim();
+      if (!name || !slug) throw new Error('Name and slug are required');
+      await api('/api/admin/categories', { method: 'POST', body: JSON.stringify({ name, slug }) });
+      toast('Category added');
+      render();
     } catch (err) {
       if (debug) debug.textContent = err.message;
       toast(err.message);
@@ -907,6 +980,25 @@
       logoutAdmin();
       return;
     }
+
+    if (action === 'admin-tab') {
+      event.preventDefault();
+      adminTab = target.dataset.tab;
+      render();
+      return;
+    }
+
+    if (action === 'delete-book') {
+      event.preventDefault();
+      if (confirm('Delete "' + target.dataset.title + '"?')) deleteBook(target.dataset.id);
+      return;
+    }
+
+    if (action === 'delete-category') {
+      event.preventDefault();
+      if (confirm('Delete category "' + target.dataset.name + '"?')) deleteCategory(target.dataset.id);
+      return;
+    }
   });
 
   document.addEventListener('submit', function (event) {
@@ -948,6 +1040,12 @@
     if (form.id === 'addBookForm') {
       event.preventDefault();
       createBook(form);
+      return;
+    }
+
+    if (form.id === 'addCategoryForm') {
+      event.preventDefault();
+      addCategory(form);
       return;
     }
   });
