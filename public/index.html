@@ -157,7 +157,7 @@
     const headers = {};
     if (state.adminToken && state.adminToken !== 'cookie') headers.Authorization = 'Bearer ' + state.adminToken;
 
-    const res = await fetch('/api/admin/uploads', {
+    const res = await fetch('/api/admin/uploads/local', {
       method: 'POST',
       credentials: 'include',
       headers,
@@ -184,7 +184,14 @@
 
   function errorView(err) {
     console.error('[Readora Error]', err);
-    return `<div class="page browse-shell"><div class="eyebrow">Error</div><h1 class="page-title">Something went wrong</h1><p class="lead">${escapeHtml(err.message || err)}</p><div class="panel"><p>Open DevTools Console and Railway logs for details.</p></div></div>`;
+    const isAuth = /invalid|expired|session|unauthorized|auth/i.test(err.message || '');
+    return `<div class="page ${isAuth ? 'admin' : 'browse-shell'}"><div class="${isAuth ? 'login-box' : ''}">
+      <div class="eyebrow">Error</div>
+      <h1 class="page-title" style="${isAuth ? 'font-size:32px;letter-spacing:-1px' : ''}">Something went wrong</h1>
+      <p class="lead" style="${isAuth ? 'font-size:14px' : ''}">${escapeHtml(err.message || err)}</p>
+      ${isAuth ? '<p class="section-sub">Your session may have expired.</p><button class="btn primary" onclick="location.hash=\'#admin\'" style="margin-top:10px">Login Again</button>' : ''}
+      <div class="panel"><p>Open DevTools Console and Railway logs for details.</p></div>
+    </div></div>`;
   }
 
   function gradientFor(book) {
@@ -676,8 +683,11 @@
         </div>
       </div>`;
     } catch (err) {
-      state.adminToken = '';
-      localStorage.removeItem('readora_admin_token');
+      // Only clear token on auth errors, keep it for transient failures
+      if (/invalid|expired|session|unauthorized|401|auth/i.test(err.message || '')) {
+        state.adminToken = '';
+        localStorage.removeItem('readora_admin_token');
+      }
       $('#view').innerHTML = errorView(err);
     }
   }
